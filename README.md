@@ -48,6 +48,7 @@ scripts/prepare_ood.py     SH17 -> a remapped out-of-distribution test set
 scripts/train.py           RT-DETR fine-tune, writes a reproducibility receipt
 scripts/evaluate.py        mAP / precision / recall on in-domain and OOD splits
 scripts/failure_cases.py   mines the worst images and measures why they failed
+scripts/download_weights.py  fetches best.pt from the public Kaggle dataset
 app/detector.py            RT-DETR inference wrapper
 app/scene.py               helmet-to-person association, per-worker compliance
 app/reasoning.py           intent routing, confidence guardrail, answer composition
@@ -115,10 +116,18 @@ measurements. Confirm each one by eye before it goes in the memo.
 
 ## Weights
 
-The fine-tuned checkpoint is not committed (198 MB). Download it and place it
-at `artifacts/best.pt`, or set `MODEL_WEIGHTS` to wherever you put it.
+The fine-tuned checkpoint (198 MB) is published as a public Kaggle dataset:
+**https://www.kaggle.com/datasets/kanagavelak/ppe-rtdetr-weights**
 
-- Direct download: **TODO: paste the Kaggle Dataset / GitHub Release link here**
+Three ways to get it, any one is enough:
+
+```bash
+python scripts/download_weights.py          # -> artifacts/best.pt, no credentials needed
+```
+
+- Or do nothing: with `WEIGHTS_KAGGLE_DATASET` set (it is, in `.env.example`
+  and the Dockerfile) the API downloads the file on first start if
+  `artifacts/best.pt` is missing.
 - Or regenerate it: run `notebooks/kaggle_ppe_rtdetr.ipynb` on Kaggle
   (Save & Run All, GPU T4 x2) and take `best.pt` from the Output tab.
 

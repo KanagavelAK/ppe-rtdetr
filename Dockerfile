@@ -19,6 +19,8 @@ RUN pip install --no-cache-dir torch torchvision --index-url https://download.py
 
 COPY app/ ./app/
 COPY scripts/ ./scripts/
+# artifacts/ may be empty; the API fetches best.pt on first start if it is missing
+RUN mkdir -p artifacts
 COPY artifacts/ ./artifacts/
 
 EXPOSE 8000

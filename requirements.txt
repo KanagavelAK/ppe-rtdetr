@@ -5,6 +5,7 @@ torchvision>=0.16
 opencv-python-headless==4.10.0.84
 numpy<2.0
 pillow>=10.0
+kagglehub>=0.3      # fetches the checkpoint from its public Kaggle dataset
 
 # API
 fastapi==0.115.6
