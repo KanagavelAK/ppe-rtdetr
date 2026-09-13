@@ -5,14 +5,22 @@ what" -- that is a relation between two boxes, and deriving it is this module's
 whole job. Counting helmets and counting people and subtracting is wrong the
 moment one worker is out of frame or one helmet sits on a bench.
 
-Association rule, stated plainly so it can be defended:
-  a helmet or bare-head box belongs to a person box when most of the headgear
-  box lies inside that person box, and its centre sits in the upper part of the
-  person box. Of the candidates that pass, the tightest containment wins.
+Two facts about the training data shape the rule:
 
-Every person who ends up with neither a helmet nor a bare head is reported as
-UNKNOWN, never as compliant and never as a violation. That single choice is
-what lets the API say "insufficient information" honestly.
+  1. In the source dataset a `helmet` box is a head WITH a helmet on it and a
+     `head` box is a head WITHOUT one. Each headgear box is therefore one
+     worker's compliance status in its own right.
+  2. `person` boxes are annotated on only ~3 percent of workers (497 person vs
+     12,908 helmet instances in the training split), so the fine-tuned model
+     rarely predicts them (test recall 0.03). Compliance cannot be anchored on
+     person boxes; if it were, almost every question would be refused.
+
+So: every headgear box becomes a worker. Person boxes, when present, refine
+that: a headgear box that lies inside a person box but not in its head zone
+is judged not worn (a helmet carried at the hip) and is excluded, and a person
+box with no headgear inside its head zone is a worker whose status is UNKNOWN,
+never compliant and never a violation. That last case is what lets the API
+say "insufficient information" honestly.
 """
 from __future__ import annotations
 
@@ -58,8 +66,8 @@ def _in_head_zone(headgear, person) -> bool:
 class Worker:
     index: int
     box_xyxy: List[float]
-    person_confidence: float
     status: str
+    person_confidence: Optional[float] = None
     headgear: Optional[str] = None
     headgear_confidence: Optional[float] = None
     note: str = ""
@@ -72,8 +80,9 @@ class SceneFacts:
     confidence_floor: float
     counts: dict = field(default_factory=dict)
     workers: List[Worker] = field(default_factory=list)
-    unassigned_helmets: int = 0
-    unassigned_heads: int = 0
+    person_boxes: int = 0
+    helmets_not_worn: int = 0
+    heads_ignored: int = 0
     compliant: int = 0
     violations: int = 0
     unknown: int = 0
@@ -87,11 +96,11 @@ class SceneFacts:
             "confidence_floor": self.confidence_floor,
             "counts": self.counts,
             "people_detected": len(self.workers),
+            "person_boxes": self.person_boxes,
             "compliant_workers": self.compliant,
             "violations": self.violations,
             "undetermined_workers": self.unknown,
-            "helmets_not_matched_to_a_person": self.unassigned_helmets,
-            "bare_heads_not_matched_to_a_person": self.unassigned_heads,
+            "helmets_seen_but_not_worn": self.helmets_not_worn,
             "max_confidence": self.max_confidence,
             "mean_confidence": self.mean_confidence,
             "workers": [
@@ -120,49 +129,70 @@ def build_scene(detections, image_width: int, image_height: int,
     people = [d for d in dets if d["label"] == "person"]
     helmets = [d for d in dets if d["label"] == "helmet"]
     heads = [d for d in dets if d["label"] == "head"]
+    gear_pool = [("helmet", g) for g in helmets] + [("head", g) for g in heads]
 
     workers = []
     claimed = set()
 
-    for i, person in enumerate(people):
-        best = None  # (containment, kind, detection index, detection)
-        for kind, pool, offset in (("helmet", helmets, 0), ("head", heads, 10_000)):
-            for j, gear in enumerate(pool):
-                key = offset + j
-                if key in claimed:
-                    continue
-                containment = _containment(gear["box_xyxy"], person["box_xyxy"])
-                if containment < CONTAINMENT_MIN:
-                    continue
-                if not _in_head_zone(gear["box_xyxy"], person["box_xyxy"]):
-                    continue
-                if best is None or containment > best[0]:
-                    best = (containment, kind, key, gear)
+    # Pass 1: people with a headgear box in their head zone, or with none at all.
+    for person in people:
+        best = None  # (containment, key, kind, detection)
+        for key, (kind, gear) in enumerate(gear_pool):
+            if key in claimed:
+                continue
+            containment = _containment(gear["box_xyxy"], person["box_xyxy"])
+            if containment < CONTAINMENT_MIN or not _in_head_zone(gear["box_xyxy"], person["box_xyxy"]):
+                continue
+            if best is None or containment > best[0]:
+                best = (containment, key, kind, gear)
 
         if best is None:
             workers.append(Worker(
-                index=i,
+                index=len(workers),
                 box_xyxy=person["box_xyxy"],
-                person_confidence=person["confidence"],
                 status=STATUS_UNKNOWN,
-                note="no helmet or bare head could be associated with this person, "
-                     "so their compliance cannot be determined",
+                person_confidence=person["confidence"],
+                note="a person was detected but no helmet or bare head could be "
+                     "resolved on them, so their compliance cannot be determined",
             ))
             continue
 
-        _, kind, key, gear = best
+        _, key, kind, gear = best
         claimed.add(key)
         workers.append(Worker(
-            index=i,
+            index=len(workers),
             box_xyxy=person["box_xyxy"],
-            person_confidence=person["confidence"],
             status=STATUS_COMPLIANT if kind == "helmet" else STATUS_VIOLATION,
+            person_confidence=person["confidence"],
             headgear=kind,
             headgear_confidence=gear["confidence"],
         ))
 
-    unassigned_helmets = sum(1 for j in range(len(helmets)) if j not in claimed)
-    unassigned_heads = sum(1 for j in range(len(heads)) if 10_000 + j not in claimed)
+    # Pass 2: headgear with no person box. A helmet lying inside a visible
+    # person box but off their head is being carried, not worn: exclude it.
+    # Headgear with no person box around it at all is a worker whose person box
+    # the detector missed, which is the common case for this model.
+    helmets_not_worn = 0
+    heads_ignored = 0
+    for key, (kind, gear) in enumerate(gear_pool):
+        if key in claimed:
+            continue
+        inside_someone = any(_containment(gear["box_xyxy"], p["box_xyxy"]) >= CONTAINMENT_MIN
+                             for p in people)
+        if inside_someone:
+            if kind == "helmet":
+                helmets_not_worn += 1
+            else:
+                heads_ignored += 1
+            continue
+        workers.append(Worker(
+            index=len(workers),
+            box_xyxy=gear["box_xyxy"],
+            status=STATUS_COMPLIANT if kind == "helmet" else STATUS_VIOLATION,
+            headgear=kind,
+            headgear_confidence=gear["confidence"],
+            note="status read from the headgear box alone; no person box was detected",
+        ))
 
     facts = SceneFacts(
         image_width=image_width,
@@ -170,8 +200,9 @@ def build_scene(detections, image_width: int, image_height: int,
         confidence_floor=confidence_floor,
         counts=dict(counts),
         workers=workers,
-        unassigned_helmets=unassigned_helmets,
-        unassigned_heads=unassigned_heads,
+        person_boxes=len(people),
+        helmets_not_worn=helmets_not_worn,
+        heads_ignored=heads_ignored,
         compliant=sum(1 for w in workers if w.status == STATUS_COMPLIANT),
         violations=sum(1 for w in workers if w.status == STATUS_VIOLATION),
         unknown=sum(1 for w in workers if w.status == STATUS_UNKNOWN),

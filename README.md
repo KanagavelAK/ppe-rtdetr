@@ -131,8 +131,10 @@ python scripts/download_weights.py          # -> artifacts/best.pt, no credentia
 - Or regenerate it: run `notebooks/kaggle_ppe_rtdetr.ipynb` on Kaggle
   (Save & Run All, GPU T4 x2) and take `best.pt` from the Output tab.
 
-`samples/` holds two images from the held-out test split for trying the
-endpoints below.
+`samples/` holds two images from the held-out test split (chosen by the same
+md5 rule as the split, so they were never trained on) for trying the endpoints
+below. The first request after start-up is slow on CPU (5-8 s, kernel warm-up);
+later requests take roughly 0.6 s.
 
 ## Running the API
 
@@ -262,10 +264,13 @@ Question the detections cannot honestly support:
    visual attributes outside the three classes, both skip detection entirely.
    Routing is a cheap, closed-vocabulary decision, so a rule set is faster than
    a model call and cannot hallucinate a route.
-2. **Detect and structure.** The detector runs, then `app/scene.py` matches each
-   helmet or bare head to a person by containment plus a head-zone check and
-   assigns every person one of three statuses, the third of which is
-   *undetermined*.
+2. **Detect and structure.** The detector runs, then `app/scene.py` turns boxes
+   into workers. In this dataset a `helmet` box is a head with a helmet on and a
+   `head` box is a bare head, so each headgear box is one worker's status. Person
+   boxes, when the model emits them (rarely: see Limits), refine that: a helmet
+   inside a person box but off their head is being carried and is not credited,
+   and a person with no headgear resolvable in their head zone is *undetermined*,
+   never compliant and never a violation.
 3. **Guard.** A deterministic check, before any language model call, decides
    whether the facts support an answer. Empty detections, an all-weak scene, or
    any worker whose headgear could not be resolved makes a compliance question
@@ -291,9 +296,13 @@ insufficient-information path. None of them need a GPU or a checkpoint.
 
 - Three classes only. Vests, gloves, harnesses and boots are not detected, and
   the API says so rather than guessing.
-- Compliance is inferred from a spatial relation between two boxes, not from
-  recognising a helmet on a head. A helmet held at chest height by a standing
-  worker can read as compliant.
+- The `person` class barely works (test mAP50 0.008, recall 0.03) because the
+  source dataset draws a person box on only ~3 percent of workers (497 person
+  vs 12,908 helmet instances in training), so the model learned not to predict
+  it. Helmet (mAP50 0.96) and bare head (0.91) are strong, and compliance is
+  computed from those. The cost is that a helmet the model sees but nobody is
+  wearing, with no person box around it to say so, is counted as a compliant
+  worker.
 - Training images are predominantly daytime outdoor construction scenes. Indoor
   industrial and low-light footage is outside the training distribution, which
   is what the SH17 number partially measures.

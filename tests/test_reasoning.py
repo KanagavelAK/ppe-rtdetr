@@ -68,15 +68,49 @@ def test_bare_head_marks_a_violation():
     assert facts.compliant == 0
 
 
-def test_helmet_on_the_ground_is_not_credited_to_a_worker():
-    """A helmet resting near a worker's feet must not read as compliance."""
+def test_helmet_carried_by_a_visible_worker_is_not_credited():
+    """A helmet inside a person box but nowhere near their head is being
+    carried, not worn. It must not read as compliance, and the worker whose
+    head is unresolved must be reported as unknown."""
     facts = scene([
         det("person", 0.92, [100, 100, 200, 400]),
         det("helmet", 0.77, [120, 370, 160, 398]),
     ])
     assert facts.compliant == 0
     assert facts.unknown == 1
-    assert facts.unassigned_helmets == 1
+    assert facts.helmets_not_worn == 1
+
+
+def test_headgear_without_person_boxes_still_yields_compliance():
+    """The trained model finds helmets and bare heads reliably (mAP50 0.96 and
+    0.91) but almost never emits a person box (recall 0.03), because the
+    source dataset labels a person on ~3 percent of workers. A helmet box is a
+    head with a helmet on it and a head box is a bare head, so each one is a
+    worker's status on its own."""
+    facts = scene([
+        det("helmet", 0.93, [130, 105, 170, 140]),
+        det("helmet", 0.90, [330, 110, 372, 148]),
+        det("head", 0.86, [530, 120, 568, 156]),
+    ])
+    assert facts.person_boxes == 0
+    assert len(facts.workers) == 3
+    assert facts.compliant == 2
+    assert facts.violations == 1
+    assert facts.unknown == 0
+    guard = reasoning.guardrail(reasoning.KIND_COMPLIANCE, facts)
+    assert guard.sufficient is True
+
+
+def test_person_box_and_free_headgear_are_both_counted():
+    facts = scene([
+        det("person", 0.90, [100, 100, 200, 400]),
+        det("helmet", 0.91, [130, 105, 170, 140]),   # on that person's head
+        det("head", 0.84, [430, 120, 468, 156]),     # a worker with no person box
+    ])
+    assert facts.compliant == 1
+    assert facts.violations == 1
+    assert facts.unknown == 0
+    assert len(facts.workers) == 2
 
 
 def test_two_workers_are_scored_independently():

@@ -157,19 +157,20 @@ def guardrail(kind: str, facts) -> Guard:
 
     if kind == KIND_COMPLIANCE:
         if not facts.workers:
-            reasons.append("no people were detected, so per-person helmet "
-                           "compliance cannot be assessed")
+            reasons.append("no people, helmets or bare heads were detected, so "
+                           "helmet compliance cannot be assessed")
         if facts.unknown > 0:
             reasons.append(
                 "{} of {} detected people have no helmet and no bare head "
                 "associated with them, most likely because their head is occluded, "
                 "cropped or too small to resolve".format(
                     facts.unknown, len(facts.workers)))
-        if facts.unassigned_heads > 0 or facts.unassigned_helmets > 0:
-            reasons.append(
-                "{} helmet and {} bare-head detections could not be matched to any "
-                "detected person, so the worker count itself is incomplete".format(
-                    facts.unassigned_helmets, facts.unassigned_heads))
+        headgear_conf = [w.headgear_confidence for w in facts.workers
+                         if w.headgear_confidence is not None]
+        if headgear_conf and max(headgear_conf) < LOW_CONFIDENCE_FLOOR:
+            reasons.append("every helmet and bare-head detection scored below {:.2f}, "
+                           "which is too weak to state who is wearing what".format(
+                               LOW_CONFIDENCE_FLOOR))
 
     if kind == KIND_COUNT and facts.mean_confidence < LOW_CONFIDENCE_FLOOR:
         reasons.append("the mean detection confidence of {:.2f} is too low for the "
@@ -182,9 +183,20 @@ def guardrail(kind: str, facts) -> Guard:
 # Answer composition
 # ---------------------------------------------------------------------------
 
+PEOPLE_WORDS = re.compile(
+    r"\b(people|person|persons|workers?|humans?|men|women|man|woman|crew|staff)\b", re.I)
+
+
 def _deterministic_answer(question: str, kind: str, facts) -> str:
     counts = facts.counts
     if kind == KIND_COUNT:
+        if PEOPLE_WORDS.search(question) and facts.workers:
+            n = len(facts.workers)
+            tail = "{} wearing a helmet, {} bare-headed".format(facts.compliant, facts.violations)
+            if facts.unknown:
+                tail += ", {} undetermined".format(facts.unknown)
+            return "I count {} {} in this image ({}).".format(
+                n, "person" if n == 1 else "people", tail)
         parts = ["{} {}".format(v, k if v == 1 else k + "s") for k, v in sorted(counts.items())]
         return "I detect " + (", ".join(parts) if parts else "nothing") + " in this image."
     if kind == KIND_COMPLIANCE:
