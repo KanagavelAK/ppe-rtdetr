@@ -353,6 +353,7 @@ then start the API with `uvicorn app.main:app --host 0.0.0.0 --port 8000`.
 cells.append(code("""
 import shutil
 shutil.copy(BEST, f"{ARTS}/best.pt")
+shutil.copy(f"{RUNS}/{RUN_NAME}/weights/last.pt", f"{ARTS}/last.pt")
 shutil.copy(f"{RUNS}/{RUN_NAME}/training_receipt.json", ARTS)
 shutil.copy(f"{DATA}/split_stats.json", ARTS)
 if Path(f"{OOD}/ood_stats.json").exists():
@@ -372,61 +373,6 @@ for p in sorted(Path(ARTS).rglob("*")):
     if p.is_file():
         print(f"{p.stat().st_size/1e6:8.1f} MB  {p.relative_to(ARTS)}")
 print(f"\\nzip: {WORK}/ppe_artifacts.zip  {Path(f'{WORK}/ppe_artifacts.zip').stat().st_size/1e6:.1f} MB")
-"""))
-
-cells.append(md("""
-## 12. Publish the weights as a Kaggle dataset
-
-Gives reviewers a permanent public download link and lets
-`scripts/download_weights.py` and the API fetch the checkpoint by name.
-
-One-time setup, in this notebook's **Add-ons → Secrets**: add `KAGGLE_USERNAME`
-and `KAGGLE_KEY` (from kaggle.com → Settings → API → Create New Token). If the
-secrets are absent this cell prints instructions and skips; nothing else in
-the notebook depends on it. You can also do the same thing by hand: download
-`best.pt` from the Output tab and upload it at kaggle.com/datasets → New Dataset.
-"""))
-cells.append(code("""
-DATASET_SLUG  = "ppe-rtdetr-weights"
-DATASET_TITLE = "PPE RT-DETR weights (helmet / head / person)"
-
-try:
-    from kaggle_secrets import UserSecretsClient
-    _s = UserSecretsClient()
-    os.environ["KAGGLE_USERNAME"] = _s.get_secret("KAGGLE_USERNAME")
-    os.environ["KAGGLE_KEY"]      = _s.get_secret("KAGGLE_KEY")
-    have_secrets = True
-except Exception as exc:
-    have_secrets = False
-    print("Kaggle secrets not configured (", exc, ").")
-    print("Add KAGGLE_USERNAME and KAGGLE_KEY under Add-ons -> Secrets, or upload best.pt manually at kaggle.com/datasets.")
-
-if have_secrets:
-    owner = os.environ["KAGGLE_USERNAME"]
-    up = Path(WORK) / "weights_upload"
-    shutil.rmtree(up, ignore_errors=True); up.mkdir()
-    shutil.copy(BEST, up / "best.pt")
-    for name in ("training_receipt.json", "metrics.json", "split_stats.json"):
-        if (Path(ARTS) / name).exists():
-            shutil.copy(Path(ARTS) / name, up / name)
-    (up / "dataset-metadata.json").write_text(json.dumps({
-        "title": DATASET_TITLE,
-        "id": f"{owner}/{DATASET_SLUG}",
-        "licenses": [{"name": "CC0-1.0"}],
-    }, indent=2))
-
-    exists = subprocess.run(["kaggle", "datasets", "status", f"{owner}/{DATASET_SLUG}"],
-                            capture_output=True, text=True).returncode == 0
-    if exists:
-        cmd = ["kaggle", "datasets", "version", "-p", str(up), "-m", f"retrain {RUN_NAME}", "--dir-mode", "zip"]
-    else:
-        cmd = ["kaggle", "datasets", "create", "-p", str(up), "--public", "--dir-mode", "zip"]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    print(r.stdout, r.stderr)
-    url = f"https://www.kaggle.com/datasets/{owner}/{DATASET_SLUG}"
-    print("\\nDataset:", url)
-    print(f"Repo config: WEIGHTS_KAGGLE_DATASET={owner}/{DATASET_SLUG}")
-    print("Processing takes a minute or two on Kaggle's side before the download link goes live.")
 """))
 
 notebook = {
