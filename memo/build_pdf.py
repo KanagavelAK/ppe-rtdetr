@@ -14,7 +14,7 @@ HERE = Path(__file__).resolve().parent
 MD, HTML, PDF = HERE / "MEMO.md", HERE / "MEMO.html", HERE / "MEMO.pdf"
 
 CSS = """
-@page { size: A4; margin: 13mm 14mm; }
+@page { size: A4; margin: 11mm 13mm; }
 body { font-family: Calibri, "Segoe UI", Arial, sans-serif; font-size: 9.6pt; line-height: 1.28; color: #111; }
 h1 { font-size: 15pt; margin: 0 0 2pt; }
 h1 + p { margin: 0 0 8pt; color: #444; font-size: 9pt; }

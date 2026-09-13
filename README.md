@@ -395,5 +395,5 @@ Four pivots, all recorded in memo §7:
 ## Licence
 
 MIT for the code (see [LICENSE](LICENSE)). The training data is the Kaggle
-Safety Helmet Detection dataset; see its page for the data licence. SH17 is
+Safety Helmet Detection dataset; CC0 1.0 Public Domain. SH17 is
 CC BY-NC-SA 4.0 and was used for evaluation only.

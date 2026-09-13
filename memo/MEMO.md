@@ -1,20 +1,22 @@
 # Site Safety Compliance Detector — technical memo
 
-Kanagavel A K · RAP pre-hackathon screening · github.com/KanagavelAK/ppe-rtdetr
+Kanagavel A K · RAP pre-hackathon screening · September 2026 · github.com/KanagavelAK/ppe-rtdetr
 
 ## 1. Domain and dataset
 
 **Problem.** Detect construction workers and whether each wears a hard hat, so
-compliance is monitored continuously from cameras already on site. The question
-a safety officer asks is not "how many helmets" but "is anyone without one".
+compliance is monitored continuously from cameras already on site. The real
+question is not "how many helmets" but "is anyone without one".
 
 **Classes.** `helmet` (a head with a helmet on), `head` (a bare head), `person`.
 Helmet and head are not COCO classes.
 
 **Source.** Safety Helmet Detection, `andrewmvd/hard-hat-detection` (Kaggle),
-5,000 images, Pascal VOC XML. Licence: **`<copy from the dataset page>`**. No
-relabelling; `scripts/prepare_data.py` converts to YOLO and folds the aliases
-`hat` / `hard-hat` into `helmet`. **Evaluation only:** SH17
+5,000 images, Pascal VOC XML, licence CC0 1.0 Public Domain. Chosen over the
+alternatives because it is real site footage rather than stock photography,
+and both non-COCO classes are already labelled, so no relabelling was needed;
+`scripts/prepare_data.py` converts to YOLO and folds the aliases `hat` /
+`hard-hat` into `helmet`. **Evaluation only:** SH17
 (`mugheesahmad/sh17-dataset-for-ppe-detection`, CC BY-NC-SA 4.0), stock
 photography, 17 classes remapped to these three. Never trained on.
 
@@ -35,7 +37,7 @@ the same rule.
 
 Balance is **26 : 8 : 1**. `head`, the class that matters most (a missed head is
 a missed violation), is well represented. `person` is not: the source draws a
-person box on ~3 percent of workers, the most consequential fact about this data.
+person box on ~3 percent of workers.
 
 ## 3. Metrics, and what they do not tell you
 
@@ -82,10 +84,9 @@ Each hypothesis below was confirmed by eye.
 13-17 px (0.10-0.14 % of image area), three with mean luminance 34-58 (dark);
 sharpness is fine (Laplacian var 700-2500). Root cause: scale and exposure
 together, at the limit of a 640 px input. Also two pairs of near-identical
-`head` boxes (0.665/0.267 and 0.414/0.326 at the same pixels): RT-DETR has no
-NMS, so a second query fires on the same object at lower confidence. Fix:
-higher input resolution or tiling for wide night shots; a 0.45 threshold
-removes every duplicate here.
+`head` boxes (0.665/0.267, 0.414/0.326): RT-DETR has no NMS, so a second query
+fires on the same object at lower confidence. Fix: tiling for wide night shots;
+a 0.45 threshold removes every duplicate.
 
 **2. `workers3822.png`, lunch break, 15 errors.** A white rice bowl in a basket
 is called `helmet` at 0.663 (box [165, 357, 194, 386]). Root cause: colour and
@@ -96,8 +97,7 @@ frame, which is a mirrored padding strip (see pattern below).
 **3. `workers210.png`, safety briefing, 14 errors, zero misses.** Eight
 `person` boxes at 0.27-0.43 on eight real workers with no `person` ground
 truth, and five `helmet` boxes in the top 14 px mirrored strip. Root cause: the
-labelling convention. Everything the model found is really there; the metric
-calls it wrong because the annotators did not draw it.
+labelling convention. Everything the model found is really there.
 
 **4. `workers2095.png`, floodlit rebar deck, 13 errors.** Three `helmet` misses
 are all ground-truth boxes 5-11 px tall at y = 0, inside the mirrored strip:
@@ -116,6 +116,8 @@ under this dataset's definition of `head`.
 **Pattern.** Genuine model errors are few and specific: objects under 0.15 %
 of the image, objects cut by the frame, one round-white-object confusion, and
 two helmet-to-head confusions at small scale (`workers429`, `workers2737`).
+Occlusion is not a driver here: the largest overlap between a missed box and
+any neighbour is 0.27 IoU, and blur never falls below the 60 threshold.
 Most of the error *count* is the ground truth: unlabelled people in crowds,
 no `person` boxes, and an inconsistently labelled mirrored border. Two things
 follow. Self-reported precision understates the model. And the API's 0.45
@@ -126,9 +128,10 @@ scored below it.
 
 `POST /ask` runs four hand-written functions in order; no framework anywhere.
 
-**Route.** Deterministic rules over a closed three-class vocabulary: faster
-than a model call and unable to hallucinate a route. Two kinds skip the
-detector: not about the image (*capital of France*) and about the image but
+**Route.** Deterministic rules over a closed three-class vocabulary sort the
+question into six kinds (compliance, count, presence, summary, not about the
+image, out of scope): faster than a model call and unable to hallucinate a
+route. The last two skip the detector: not about the image (*capital of France*) and about the image but
 outside the class list (*what colour is the truck*). The second matters more; a
 system that only checked "is this about the image" would run the detector and
 invent an answer from boxes that cannot support one.
@@ -152,9 +155,8 @@ and no bare head associated with them, most likely because their head is
 occluded, cropped or too small to resolve."* Both alternatives would be wrong:
 "two of three compliant" hides a worker; "one in violation" invents one.
 
-**Compose.** Only after the guard passes, one direct Messages API call phrases
-the facts; with no key, templates phrase the same facts and `answer_source`
-says so.
+**Compose.** After the guard passes, one direct Messages API call phrases the
+facts; with no key, templates do, and `answer_source` says which.
 
 ## 6. Reproducibility (`artifacts/training_receipt.json`)
 
@@ -164,7 +166,8 @@ GPU), imgsz 640, AdamW, lr0 1e-4, AMP, seed 0, patience 12. **Wall-clock
 6,168 s (1.71 h).** Weights `best.pt` 66 MB: github.com/KanagavelAK/ppe-rtdetr/releases/download/v1.0/best.pt
 (or `python scripts/download_weights.py`). Exact steps:
 `notebooks/kaggle_ppe_rtdetr.ipynb`, Save & Run All, no datasets attached.
-**Live API and demo:** kanagavel-ppe-rtdetr.hf.space (Swagger at `/api/docs`).
+Dockerfile included (CPU). **Live API and demo:** kanagavel-ppe-rtdetr.hf.space
+(Swagger at `/api/docs`).
 
 ## 7. What I tried first and changed
 
@@ -172,10 +175,10 @@ GPU), imgsz 640, AdamW, lr0 1e-4, AMP, seed 0, patience 12. **Wall-clock
    at `model.to(device)`. The notebook now probes compute capability.
 2. **Ray Tune crash.** Ultralytics auto-registers a Ray callback whose private
    API Kaggle's newer `ray` removed; training died after epoch 1 until disabled.
-3. **Single GPU → DDP + RAM cache:** 1.71 h instead of an estimated 3+.
+3. **Single GPU → DDP + RAM cache:** 1.71 h instead of 3+.
 4. **Compliance anchored on person boxes → per headgear box.** The first design
    needed a person box per worker; with person recall at 0.03 it refused nearly
    every real question ("no people detected" with four helmets in view). The
    rule was inverted: headgear defines the worker, person boxes only refine, and
    the refusal stays where it is honest (a visible person with no resolvable
-   head). The most useful thing the evaluation taught me.
+   head).
