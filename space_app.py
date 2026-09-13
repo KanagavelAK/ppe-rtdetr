@@ -118,9 +118,14 @@ def _workers_rows(facts):
             for w in facts.workers]
 
 
-# ZeroGPU: the runner refuses to start a Space with no @spaces.GPU function. These
-# two are the only GPU-worthy calls; the API routes stay on CPU (~2 s/image).
-@spaces.GPU(duration=30)
+@spaces.GPU(duration=5)
+def _zero_gpu_placeholder():
+    """Never called. ZeroGPU refuses to start a Space with no @spaces.GPU function,
+    but reserving a GPU for a CPU-pinned model only burns the daily quota, so the
+    real handlers below run undecorated on CPU (~2 s/image) and cost nothing."""
+    return "ok"
+
+
 def run_detect(image, confidence):
     if image is None:
         return None, "", _pill("upload an image first", "warn"), [], {}
@@ -138,7 +143,6 @@ def run_detect(image, confidence):
     return _draw(image, detections), _summary_html(facts), verdict, _workers_rows(facts), payload
 
 
-@spaces.GPU(duration=30)
 def run_ask(image, question, confidence):
     """Same four steps as POST /ask, in the same order."""
     decision = reasoning.route(question or "")
@@ -259,7 +263,7 @@ with gr.Blocks(title="Site Safety Compliance", theme=THEME, css=CSS) as demo:
 
     gr.HTML(css_template=".foot { opacity: 0.7; font-size: 0.85rem; text-align: center; padding-top: 4px; }",
             value=f'<div class="foot">Same model and code as <code>POST {API_PREFIX}/detect</code> and '
-                  f'<code>POST {API_PREFIX}/ask</code>. Detection runs on a borrowed GPU here; the API routes run on CPU.</div>')
+                  f'<code>POST {API_PREFIX}/ask</code>. Everything here runs on CPU, about 2 s per image.</div>')
 
     detect_btn.click(run_detect, [image, confidence], [annotated, summary, verdict, workers, details])
     ask_btn.click(run_ask, [image, question, confidence], [annotated, answer, summary, verdict, workers, details])
