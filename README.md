@@ -292,6 +292,24 @@ Twelve tests cover routing, the association rule including a helmet lying on
 the ground that must not be credited to a worker, and the guardrail's
 insufficient-information path. None of them need a GPU or a checkpoint.
 
+## How this maps to the brief
+
+| Brief requirement | Where to check |
+|---|---|
+| RT-DETR, own training code, no AutoML | `scripts/train.py` (Ultralytics RT-DETR-L, one `model.train` call, every hyperparameter on the CLI) |
+| At least one non-COCO class | `helmet`, `head` |
+| Own dataset, sourcing and split documented | `scripts/prepare_data.py`, `artifacts/split_stats.json`, memo sections 1-2 |
+| mAP, precision/recall, confusion behaviour | `scripts/evaluate.py`, `artifacts/metrics.json`, confusion matrix from the run, memo section 3 |
+| FastAPI: image in, boxes + labels + confidences out | `POST /detect` |
+| Second endpoint: intent routing, structured reasoning, confidence guardrail | `POST /ask`; `app/reasoning.py:route`, `app/scene.py:build_scene`, `app/reasoning.py:guardrail` |
+| Explicit "insufficient information" | `guardrail()` + `insufficient_message()`; worked example in `tests/test_reasoning.py` and memo section 5 |
+| No agentic frameworks | `requirements.txt` has none; `grep -ri langchain\|crewai\|autogen\|langgraph` is empty |
+| Reproducibility: steps, environment, hardware, time, hyperparameters | `notebooks/kaggle_ppe_rtdetr.ipynb`, `requirements.txt`, `Dockerfile`, `artifacts/training_receipt.json` |
+| Weights with a working load path | Kaggle dataset + `scripts/download_weights.py` + auto-fetch in `app/detector.py` |
+| Five failure cases with root cause | `scripts/failure_cases.py`, `artifacts/failures/`, memo section 4 |
+| API usage with sample payloads for both endpoints | Endpoints section above, `samples/` |
+| Bonus: Docker, logging, error handling | `Dockerfile` with healthcheck; request-id middleware; typed `ErrorResponse` on 400/500 |
+
 ## Limits
 
 - Three classes only. Vests, gloves, harnesses and boots are not detected, and
