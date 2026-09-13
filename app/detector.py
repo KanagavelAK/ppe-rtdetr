@@ -24,6 +24,7 @@ CLASSES = ["helmet", "head", "person"]
 DEFAULT_WEIGHTS = os.getenv("MODEL_WEIGHTS", "artifacts/best.pt")
 DEFAULT_CONF = float(os.getenv("CONF_THRESHOLD", "0.25"))
 DEFAULT_IMGSZ = int(os.getenv("IMGSZ", "640"))
+DEVICE = os.getenv("DETECTOR_DEVICE", "")   # "" lets Ultralytics choose; "cpu" pins it
 WEIGHTS_URL = os.getenv("WEIGHTS_URL", "https://github.com/KanagavelAK/ppe-rtdetr/releases/download/v1.0/best.pt")
 WEIGHTS_KAGGLE_DATASET = os.getenv("WEIGHTS_KAGGLE_DATASET", "")
 
@@ -103,7 +104,8 @@ class Detector:
         array = np.array(image)[:, :, ::-1]  # PIL RGB -> BGR for ultralytics
         started = time.time()
         with self._lock:  # ultralytics predict is not reentrant
-            result = self._model.predict(array, conf=conf, imgsz=self.imgsz, verbose=False)[0]
+            result = self._model.predict(array, conf=conf, imgsz=self.imgsz, verbose=False,
+                                         device=DEVICE or None)[0]
         elapsed_ms = (time.time() - started) * 1000.0
 
         detections = []

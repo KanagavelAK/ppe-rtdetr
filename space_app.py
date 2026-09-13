@@ -14,6 +14,12 @@ one `@spaces.GPU` function; a plain uvicorn process is shut down.
 import io
 import os
 
+ON_SPACES = bool(os.getenv("SPACE_ID"))
+if ON_SPACES:
+    # ZeroGPU emulates torch.cuda outside @spaces.GPU functions and raises if it is
+    # touched; the API routes are not GPU functions, so keep inference on CPU there.
+    os.environ.setdefault("DETECTOR_DEVICE", "cpu")
+
 try:
     import spaces  # ZeroGPU runtime; must be imported before torch on Spaces
 except ImportError:  # local run: make @spaces.GPU a no-op
@@ -130,8 +136,6 @@ with gr.Blocks(title="Site Safety Compliance") as demo:
     detect_btn.click(run_detect, [image, confidence], [annotated, details])
     ask_btn.click(run_ask, [image, question, confidence], [answer, details])
 
-
-ON_SPACES = bool(os.getenv("SPACE_ID"))
 
 if ON_SPACES:
     from gradio.routes import App
