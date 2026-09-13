@@ -1,18 +1,26 @@
-"""Hugging Face Spaces entry point (Gradio SDK, free CPU tier).
+"""Hugging Face Spaces entry point (Gradio SDK, ZeroGPU / CPU free tier).
 
-One process serves both:
-    /            a small Gradio demo page (upload, detect, ask)
-    /detect      the FastAPI endpoints from app/main.py, unchanged
-    /ask
-    /docs        Swagger UI
+One process serves both the demo page and the FastAPI app from app/main.py.
 
-Locally:  python space_app.py   ->  http://localhost:7860
+    On Spaces (SPACE_ID set): Gradio owns the server, the API is mounted under
+        /api  ->  /api/detect, /api/ask, /api/health, /api/docs
+    Locally (python space_app.py -> http://localhost:7860): the API is at the
+        root as usual, /detect, /ask, /docs, and the page is at /.
+
+The two layouts exist because the Spaces runner only marks a Gradio Space
+live once `demo.launch()` has run; a plain uvicorn process is shut down.
 """
 import io
 import os
 
+try:
+    import spaces  # noqa: F401  ZeroGPU runtime; must be imported before torch on Spaces
+except ImportError:
+    pass
+
 import gradio as gr
 import uvicorn
+from starlette.routing import Mount
 from PIL import Image, ImageDraw
 
 from app import reasoning
@@ -115,14 +123,16 @@ with gr.Blocks(title="Site Safety Compliance") as demo:
     ask_btn.click(run_ask, [image, question, confidence], [answer, details])
 
 
-@api.get("/app/config.json", include_in_schema=False)
-def _space_readiness_probe():
-    """Hugging Face's Gradio runner polls this path before marking the Space live."""
-    return demo.get_config_file()
+ON_SPACES = bool(os.getenv("SPACE_ID"))
 
-
-# ssr_mode=False: on Spaces, SSR starts a Node server on 7860 and our uvicorn would lose the port
-app = gr.mount_gradio_app(api, demo, path="/", ssr_mode=False)
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "7860")))
+if ON_SPACES:
+    detector.load()   # the mounted sub-app's startup hook does not run under Gradio's server
+    gradio_app, _, _ = demo.launch(server_name="0.0.0.0", server_port=7860,
+                                   prevent_thread_lock=True, ssr_mode=False)
+    # Gradio ends its route table with a catch-all, so the API mount must go first.
+    gradio_app.router.routes.insert(0, Mount("/api", app=api))
+    demo.block_thread()
+else:
+    app = gr.mount_gradio_app(api, demo, path="/", ssr_mode=False)
+    if __name__ == "__main__":
+        uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "7860")))
