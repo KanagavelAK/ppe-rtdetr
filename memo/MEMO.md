@@ -100,6 +100,13 @@ that implies about where the model should and should not be deployed.>`
 
 ## 5. The reasoning layer
 
+![Part B: reasoning layer](../docs/architecture_part_b.svg)
+
+The `/ask` request runs top to bottom through the diagram. Every purple box is
+a deterministic rule that runs before any model is consulted; the only model
+call on the happy path is the last one. The two grey side exits are correct
+outputs, not errors.
+
 **Routing.** `app/reasoning.py:route` classifies the question into six kinds
 with a deterministic rule pass, and returns whether the detector is needed.
 Routing is a high-traffic decision over a closed vocabulary of three classes, so

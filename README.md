@@ -23,9 +23,26 @@ is sitting on a bench or a worker is partly out of frame. The reasoning layer
 associates each helmet with a person by spatial containment, and reports any
 worker it cannot resolve as undetermined rather than guessing.
 
+## Architecture
+
+**Part A, detection.** The two datasets never merge: SH17 has its own path that
+only meets the model at evaluation, which is the visual proof it was not
+trained on. `best.pt` fans out to both evaluation and serving, so the API
+loads exactly the checkpoint that was measured.
+
+![Part A: detection pipeline](docs/architecture_part_a.svg)
+
+**Part B, reasoning.** Three deterministic steps (`route`, `build_scene`,
+`guardrail`) run before the single optional model call in `compose`. Both
+side exits are correct outputs, not errors: "not about the image" and
+"insufficient information" are answers the system is designed to give.
+
+![Part B: reasoning layer](docs/architecture_part_b.svg)
+
 ## Layout
 
 ```
+docs/architecture_part_*.svg   the two diagrams above
 scripts/prepare_data.py    Pascal VOC XML -> YOLO, deterministic image-level split
 scripts/prepare_ood.py     SH17 -> a remapped out-of-distribution test set
 scripts/train.py           RT-DETR fine-tune, writes a reproducibility receipt
