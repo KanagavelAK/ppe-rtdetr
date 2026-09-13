@@ -1,0 +1,29 @@
+{
+  "images_per_split": {
+    "train": 3447,
+    "val": 798,
+    "test": 755
+  },
+  "instances_per_split": {
+    "train": {
+      "helmet": 12908,
+      "head": 4089,
+      "person": 497
+    },
+    "val": {
+      "helmet": 3086,
+      "head": 811,
+      "person": 186
+    },
+    "test": {
+      "helmet": 2972,
+      "head": 885,
+      "person": 68
+    }
+  },
+  "background_only_images": 0,
+  "skipped_annotations": 0,
+  "split_method": "md5(file stem) -> deterministic bucket, image level",
+  "val_frac": 0.15,
+  "test_frac": 0.15
+}

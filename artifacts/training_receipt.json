@@ -1,0 +1,33 @@
+{
+  "status": "ok",
+  "error": null,
+  "epochs_completed": 40,
+  "hardware": {
+    "python": "3.12.13",
+    "platform": "Linux-6.12.90+-x86_64-with-glibc2.35",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu": "Tesla T4",
+    "gpu_memory_gb": 14.6,
+    "nvidia_smi": "Tesla T4, 580.159.04, 15360 MiB\nTesla T4, 580.159.04, 15360 MiB",
+    "ultralytics": "8.3.40"
+  },
+  "model": "rtdetr-l.pt",
+  "epochs": 40,
+  "batch": 16,
+  "imgsz": 640,
+  "lr0": 0.0001,
+  "optimizer": "AdamW",
+  "seed": 0,
+  "device": "0,1",
+  "workers": 4,
+  "cache": "ram",
+  "amp": true,
+  "patience": 12,
+  "data": "/kaggle/working/data/ppe/data.yaml",
+  "wall_clock_seconds": 6168.4,
+  "wall_clock_human": "1.71 h",
+  "weights": "/kaggle/working/runs/rtdetr_ppe/weights/best.pt",
+  "weights_size_mb": 66.1,
+  "notebook": "notebooks/kaggle_ppe_rtdetr.ipynb, Kaggle free tier, Save & Run All, 2026-09-13"
+}

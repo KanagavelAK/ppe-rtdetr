@@ -1,0 +1,14 @@
+{
+  "images": 600,
+  "instances": {
+    "helmet": 569,
+    "person": 1473,
+    "head": 568
+  },
+  "source": "SH17 (CC BY-NC-SA 4.0)",
+  "index_map_sh17_to_ours": {
+    "0": "person",
+    "1": "head",
+    "14": "helmet"
+  }
+}

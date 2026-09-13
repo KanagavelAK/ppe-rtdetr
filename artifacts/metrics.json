@@ -1,0 +1,75 @@
+{
+  "weights": "artifacts/best.pt",
+  "in_domain": {
+    "split": "test",
+    "images": 755,
+    "instances": 3925,
+    "mAP50": 0.6271,
+    "mAP50_95": 0.4117,
+    "precision": 0.6275,
+    "recall": 0.6167,
+    "per_class": {
+      "helmet": {
+        "instances": 2972,
+        "precision": 0.9272,
+        "recall": 0.9303,
+        "mAP50": 0.9594,
+        "mAP50_95": 0.6288
+      },
+      "head": {
+        "instances": 885,
+        "precision": 0.8769,
+        "recall": 0.8904,
+        "mAP50": 0.9139,
+        "mAP50_95": 0.6018
+      },
+      "person": {
+        "instances": 68,
+        "precision": 0.0782,
+        "recall": 0.0294,
+        "mAP50": 0.008,
+        "mAP50_95": 0.0045
+      }
+    }
+  },
+  "out_of_distribution": {
+    "split": "test",
+    "source": "SH17, 600 images, never trained on",
+    "images": 600,
+    "instances": 2610,
+    "mAP50": 0.0257,
+    "mAP50_95": 0.011,
+    "precision": 0.0532,
+    "recall": 0.0362,
+    "per_class": {
+      "helmet": {
+        "instances": 569,
+        "precision": 0.0003,
+        "recall": 0.0035,
+        "mAP50": 0.0001,
+        "mAP50_95": 0.0
+      },
+      "head": {
+        "instances": 568,
+        "precision": 0.0,
+        "recall": 0.0,
+        "mAP50": 0.0,
+        "mAP50_95": 0.0
+      },
+      "person": {
+        "instances": 1473,
+        "precision": 0.1594,
+        "recall": 0.1052,
+        "mAP50": 0.077,
+        "mAP50_95": 0.0331
+      }
+    }
+  },
+  "generalisation_gap_mAP50": 0.6014,
+  "final_val_epoch40": {
+    "mAP50": 0.615,
+    "mAP50_95": 0.4,
+    "precision": 0.627,
+    "recall": 0.597
+  }
+}
