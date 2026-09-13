@@ -12,6 +12,12 @@ license: mit
 
 # Site Safety Compliance API
 
+[![Live demo](https://img.shields.io/badge/live%20demo-Hugging%20Face%20Space-ff7a1e)](https://kanagavel-ppe-rtdetr.hf.space)
+[![Weights](https://img.shields.io/badge/weights-best.pt%2066%20MB-2f7a3a)](https://github.com/KanagavelAK/ppe-rtdetr/releases/download/v1.0/best.pt)
+[![Memo](https://img.shields.io/badge/memo-2%20pages-1f4f8f)](memo/MEMO.pdf)
+![Tests](https://img.shields.io/badge/tests-14%20passing-brightgreen)
+![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue)
+
 RT-DETR fine-tuned on construction-site imagery to detect **helmet**, **head**
 (a bare head, no helmet) and **person**, served through FastAPI, with a
 hand-written reasoning layer that answers natural-language questions about an
@@ -26,6 +32,14 @@ checkpoint can do this.
 | **Memo** | [memo/MEMO.pdf](memo/MEMO.pdf) (2 pages) · source [memo/MEMO.md](memo/MEMO.md) |
 | **Reproduce training** | [notebooks/kaggle_ppe_rtdetr.ipynb](notebooks/kaggle_ppe_rtdetr.ipynb), Kaggle free tier, one Save & Run All |
 | **Metrics and receipts** | [artifacts/](artifacts/) — `metrics.json`, `training_receipt.json`, `split_stats.json`, `failures/` |
+
+![Demo page](docs/demo_page.png)
+
+![Sample output](docs/sample_output.png)
+
+*Model output on the two held-out `samples/`. The boxes touching the top edge
+of the left image sit in the dataset's mirrored padding strip; see Failure
+analysis.*
 
 ## Why this problem
 
@@ -65,9 +79,12 @@ in memo §3.
 
 <p align="center"><img src="artifacts/confusion_matrix.png" width="46%"> <img src="artifacts/PR_curve.png" width="46%"></p>
 
-**Performance.** RT-DETR-L, 32 M parameters, 105 GFLOPs at 640 px.
-Inference: 14.6 ms/image on a T4, ~0.3 s on the Space's borrowed A10G,
-~0.6 s on a laptop CPU, ~2 s on the Space's shared CPU. Weights 66 MB.
+**Performance.** RT-DETR-L, 32 M parameters, 105 GFLOPs at 640 px, weights
+66 MB. Inference per image: 14.6 ms on a T4 GPU; on CPU about 0.2 s on the
+Space (steady state), 0.6 s on a laptop, and 2 s for the first request after
+start-up while kernels warm up. Requests are serialised behind a lock (the
+Ultralytics predictor is not re-entrant), so throughput is one image at a time
+per process.
 
 ## Architecture
 
@@ -85,10 +102,12 @@ side exits are correct outputs, not errors.
 
 ### How the reasoning layer decides
 
-1. **Route.** A rule pass over a closed vocabulary classifies the question.
-   Two kinds skip the detector: not about the image (*capital of France*) and
-   about the image but outside the class list (*what colour is the truck*).
-   Rules are faster than a model call and cannot hallucinate a route.
+1. **Route.** A rule pass over a closed vocabulary classifies the question
+   into one of six kinds: `compliance`, `count`, `presence`, `summary`,
+   `not_about_the_image`, `out_of_detector_scope`. The last two skip the
+   detector: not about the image (*capital of France*) and about the image but
+   outside the class list (*what colour is the truck*). Rules are faster than
+   a model call and cannot hallucinate a route.
 2. **Detect and structure.** `app/scene.py` turns boxes into workers. A
    `helmet` box is a head with a helmet on and a `head` box is a bare head, so
    each is one worker's status. Person boxes, when present, refine that: a
@@ -120,7 +139,17 @@ What they showed:
 - Every duplicate box scored below 0.45, which is why the API's guardrail
   floor is set there.
 
+<p align="center"><img src="artifacts/failures/failure_hard_hat_workers506.png" width="48%"></p>
+
+*Case 5: three ground-truth boxes, fourteen predictions. The "false positive"
+heads are real, unlabelled rescuers seen from behind; the one miss is the
+helmet cut by the bottom edge, returned as two fragments (green boxes at the
+bottom).*
+
 ## Quickstart
+
+Python 3.10 to 3.13 (tested on 3.10 in the Space, 3.11 in Docker, 3.12 on
+Kaggle, 3.13 locally). No GPU needed to serve.
 
 ```bash
 git clone https://github.com/KanagavelAK/ppe-rtdetr && cd ppe-rtdetr
@@ -140,6 +169,25 @@ Demo page + API in one process, as deployed on the Space:
 
 Tests (no GPU or checkpoint needed): `python -m pytest tests -q` — 14 tests
 covering routing, the association rule and the guardrail.
+
+### Configuration
+
+All settings are environment variables; `.env.example` lists them with
+defaults, and `uvicorn` picks up a `.env` automatically.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `MODEL_WEIGHTS` | `artifacts/best.pt` | checkpoint path |
+| `WEIGHTS_URL` | GitHub release v1.0 | where to fetch the checkpoint if the file is missing |
+| `WEIGHTS_KAGGLE_DATASET` | empty | optional alternative source, `owner/slug` of a Kaggle dataset |
+| `CONF_THRESHOLD` | `0.25` | default detection confidence cut-off (per-request override: form field `confidence`) |
+| `IMGSZ` | `640` | inference size; must match training |
+| `DETECTOR_DEVICE` | empty | empty lets Ultralytics choose; `cpu` pins inference to CPU |
+| `LOW_CONFIDENCE_FLOOR` | `0.45` | guardrail: below this no assertion is made |
+| `ANTHROPIC_API_KEY` | unset | optional; enables the language-model phrasing step |
+| `ANTHROPIC_MODEL` | `claude-opus-5` | model for that single call |
+| `MAX_UPLOAD_BYTES` | `12582912` | 12 MB upload limit; larger files get a 400 |
+| `LOG_LEVEL` | `INFO` | one line per request with method, path, status, latency, request id |
 
 ## API
 
@@ -263,11 +311,13 @@ python scripts/failure_cases.py --weights runs/rtdetr_ppe/weights/best.pt --data
 
 ## Deployment
 
-The live instance is a free Hugging Face Space (Gradio SDK, ZeroGPU).
+The live instance is a free Hugging Face Space (Gradio SDK, ZeroGPU tier).
 `space_app.py` mounts the FastAPI app inside a Gradio app, so one process
-serves the demo page at `/` and the API under `/api/`. The demo's buttons are
-`@spaces.GPU` functions and borrow an A10G; the API routes run on CPU. Free
-Spaces sleep after 48 h idle and wake in about a minute on the next request.
+serves the demo page at `/` and the API under `/api/`. Everything runs on CPU:
+ZeroGPU requires at least one `@spaces.GPU` function to start, so the file
+carries a placeholder that is never called, and no request reserves a GPU or
+consumes GPU quota. Free Spaces sleep after 48 h idle and wake in about a
+minute on the next request.
 The YAML block at the top of this file is the Space's configuration; to deploy
 your own copy, create a Space with SDK Gradio and push this repo to it.
 
@@ -292,6 +342,8 @@ artifacts/                  metrics, receipts, plots, failure report + images
 docs/                       the two architecture diagrams
 memo/                       MEMO.md, MEMO.pdf, build_pdf.py
 samples/                    two held-out test images
+Dockerfile                  CPU image with a /health healthcheck
+requirements.txt, .env.example, LICENSE
 ```
 
 ## How this maps to the brief
@@ -311,6 +363,22 @@ samples/                    two held-out test images
 | Five failure cases with root cause | memo §4, `artifacts/failures/` |
 | API usage with sample payloads | API section, `samples/` |
 | Bonus: Docker, deployment, logging, error handling | `Dockerfile`, live Space, request-id middleware, typed errors |
+
+## What changed along the way
+
+Four pivots, all recorded in memo §7:
+
+1. Kaggle's P100 stopped working with the current torch build (no sm_60
+   kernels), so training moved to 2 × T4 with DDP.
+2. Ultralytics' Ray Tune callback crashed after epoch 1 on Kaggle's newer
+   `ray`; it is disabled in `train.py`.
+3. Compliance was first anchored on `person` boxes. With person recall at
+   0.03 that refused nearly every real question, so the rule was inverted:
+   headgear defines the worker, person boxes only refine, and the refusal is
+   kept where it is honest (a visible person with no resolvable head).
+4. The Space went through five deploy iterations (dependency clash, Gradio
+   SSR port, runner expectations, ZeroGPU rules); each is a comment in
+   `space_app.py`.
 
 ## Limits
 
