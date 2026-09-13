@@ -161,8 +161,8 @@ says so.
 Kaggle free tier, 2 × Tesla T4 15 GB, DDP; Python 3.12.13, torch 2.10.0+cu128,
 Ultralytics 8.3.40. `rtdetr-l.pt` COCO-pretrained, 40 epochs, batch 16 (8 per
 GPU), imgsz 640, AdamW, lr0 1e-4, AMP, seed 0, patience 12. **Wall-clock
-6,168 s (1.71 h).** Weights `best.pt` 66 MB: `python scripts/download_weights.py`
-or the Kaggle dataset linked in the README. Exact steps:
+6,168 s (1.71 h).** Weights `best.pt` 66 MB: github.com/KanagavelAK/ppe-rtdetr/releases/download/v1.0/best.pt
+(or `python scripts/download_weights.py`). Exact steps:
 `notebooks/kaggle_ppe_rtdetr.ipynb`, Save & Run All, no datasets attached.
 
 ## 7. What I tried first and changed

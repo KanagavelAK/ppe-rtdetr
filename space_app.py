@@ -11,8 +11,6 @@ Locally:  python space_app.py   ->  http://localhost:7860
 import io
 import os
 
-os.environ.setdefault("WEIGHTS_KAGGLE_DATASET", "kanagavelak/ppe-rtdetr-weights")
-
 import gradio as gr
 import uvicorn
 from PIL import Image, ImageDraw

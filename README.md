@@ -60,7 +60,7 @@ scripts/prepare_ood.py     SH17 -> a remapped out-of-distribution test set
 scripts/train.py           RT-DETR fine-tune, writes a reproducibility receipt
 scripts/evaluate.py        mAP / precision / recall on in-domain and OOD splits
 scripts/failure_cases.py   mines the worst images and measures why they failed
-scripts/download_weights.py  fetches best.pt from the public Kaggle dataset
+scripts/download_weights.py  fetches best.pt from the GitHub release
 memo/MEMO.md, MEMO.pdf     the two-page memo; memo/build_pdf.py renders it
 artifacts/                 metrics, receipt, split stats, failure report + annotated images
 app/detector.py            RT-DETR inference wrapper
@@ -131,18 +131,19 @@ measurements. Confirm each one by eye before it goes in the memo.
 
 ## Weights
 
-The fine-tuned checkpoint (`best.pt`, 66 MB, optimizer stripped) is published as a public Kaggle dataset:
-**https://www.kaggle.com/datasets/kanagavelak/ppe-rtdetr-weights**
+The fine-tuned checkpoint (`best.pt`, 66 MB, optimizer stripped) is a GitHub
+release asset, a plain HTTPS download with no account needed:
+
+**https://github.com/KanagavelAK/ppe-rtdetr/releases/download/v1.0/best.pt**
 
 Three ways to get it, any one is enough:
 
 ```bash
-python scripts/download_weights.py          # -> artifacts/best.pt, no credentials needed
+python scripts/download_weights.py          # -> artifacts/best.pt
 ```
 
-- Or do nothing: with `WEIGHTS_KAGGLE_DATASET` set (it is, in `.env.example`
-  and the Dockerfile) the API downloads the file on first start if
-  `artifacts/best.pt` is missing.
+- Or do nothing: the API downloads it from `WEIGHTS_URL` on first start if
+  `artifacts/best.pt` is missing (`.env.example` and the Dockerfile set it).
 - Or regenerate it: run `notebooks/kaggle_ppe_rtdetr.ipynb` on Kaggle
   (Save & Run All, GPU T4 x2) and take `best.pt` from the Output tab.
 
@@ -195,8 +196,8 @@ git remote add hf https://huggingface.co/spaces/<your-hf-username>/ppe-rtdetr
 git push hf main
 ```
 
-The Space installs `requirements.txt`, downloads `best.pt` from the Kaggle
-dataset on first start (`WEIGHTS_KAGGLE_DATASET`), and listens on 7860. Free
+The Space installs `requirements.txt`, downloads `best.pt` from the GitHub
+release on first start (`WEIGHTS_URL`), and listens on 7860. Free
 Spaces sleep after 48 h without traffic; the first request afterwards takes
 about a minute to wake. Live instance: **TODO: paste the Space URL here**.
 
@@ -380,7 +381,7 @@ need a GPU or a checkpoint.
 | Explicit "insufficient information" | `guardrail()` + `insufficient_message()`; worked example in `tests/test_reasoning.py` and memo section 5 |
 | No agentic frameworks | `requirements.txt` has none; `grep -ri langchain\|crewai\|autogen\|langgraph` is empty |
 | Reproducibility: steps, environment, hardware, time, hyperparameters | `notebooks/kaggle_ppe_rtdetr.ipynb`, `requirements.txt`, `Dockerfile`, `artifacts/training_receipt.json` |
-| Weights with a working load path | Kaggle dataset + `scripts/download_weights.py` + auto-fetch in `app/detector.py` |
+| Weights with a working load path | GitHub release v1.0 + `scripts/download_weights.py` + auto-fetch in `app/detector.py` |
 | Five failure cases with root cause | `scripts/failure_cases.py`, `artifacts/failures/`, memo section 4 |
 | API usage with sample payloads for both endpoints | Endpoints section above, `samples/` |
 | Bonus: Docker, logging, error handling | `Dockerfile` with healthcheck; request-id middleware; typed `ErrorResponse` on 400/500 |

@@ -24,6 +24,7 @@ CLASSES = ["helmet", "head", "person"]
 DEFAULT_WEIGHTS = os.getenv("MODEL_WEIGHTS", "artifacts/best.pt")
 DEFAULT_CONF = float(os.getenv("CONF_THRESHOLD", "0.25"))
 DEFAULT_IMGSZ = int(os.getenv("IMGSZ", "640"))
+WEIGHTS_URL = os.getenv("WEIGHTS_URL", "https://github.com/KanagavelAK/ppe-rtdetr/releases/download/v1.0/best.pt")
 WEIGHTS_KAGGLE_DATASET = os.getenv("WEIGHTS_KAGGLE_DATASET", "")
 
 
@@ -55,19 +56,17 @@ class Detector:
         if self._model is not None:
             return
         path = Path(self.weights)
-        if not path.exists() and WEIGHTS_KAGGLE_DATASET:
-            log.info("weights missing at %s, fetching from Kaggle dataset %s",
-                     path, WEIGHTS_KAGGLE_DATASET)
+        if not path.exists() and (WEIGHTS_URL or WEIGHTS_KAGGLE_DATASET):
+            log.info("weights missing at %s, downloading", path)
             try:
                 from scripts.download_weights import download
-                download(WEIGHTS_KAGGLE_DATASET, path)
+                download(path, WEIGHTS_URL, WEIGHTS_KAGGLE_DATASET)
             except Exception as exc:
                 log.warning("weights download failed: %s", exc)
         if not path.exists():
             raise DetectorError(
-                "model weights not found at {}. Set MODEL_WEIGHTS, or set "
-                "WEIGHTS_KAGGLE_DATASET so they are fetched automatically, or run "
-                "scripts/download_weights.py.".format(path)
+                "model weights not found at {}. Set MODEL_WEIGHTS to the checkpoint, "
+                "or run scripts/download_weights.py.".format(path)
             )
         from ultralytics import RTDETR  # imported lazily, it is slow
 
