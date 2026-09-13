@@ -39,15 +39,24 @@ def browser():
 body = markdown.markdown(MD.read_text(encoding="utf-8"), extensions=["tables"])
 HTML.write_text(f"<!doctype html><meta charset='utf-8'><style>{CSS}</style><body>{body}</body>", encoding="utf-8")
 import tempfile, time
-with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as profile:   # fresh profile: a running browser must not swallow the job
-    subprocess.run([browser(), "--headless=new", "--disable-gpu", "--no-sandbox", f"--user-data-dir={profile}",
-                    "--no-pdf-header-footer", f"--print-to-pdf={PDF}", str(HTML)],
-                   check=True, capture_output=True, timeout=120)
-    for _ in range(60):
-        if PDF.exists() and PDF.stat().st_size > 0:
-            break
-        time.sleep(0.5)
+PDF.unlink(missing_ok=True)
+profile = tempfile.mkdtemp(prefix="memo-pdf-")   # fresh profile: a running browser must not swallow the job
+subprocess.run([browser(), "--headless=new", "--disable-gpu", "--no-sandbox", f"--user-data-dir={profile}",
+                "--no-pdf-header-footer", f"--print-to-pdf={PDF}", HTML.resolve().as_uri()],
+               check=True, capture_output=True, timeout=120)
+for _ in range(120):
+    if PDF.exists() and PDF.stat().st_size > 0:
+        break
+    time.sleep(0.5)
+time.sleep(1)
 HTML.unlink()
+shutil.rmtree(profile, ignore_errors=True)
+
+from pypdf import PdfReader
+import unicodedata
+text = unicodedata.normalize("NFKC", "".join(page.extract_text() for page in PdfReader(str(PDF)).pages))
+if "ERR_FILE_NOT_FOUND" in text or "tried first" not in text:
+    sys.exit("PDF render failed or is incomplete; rerun")
 
 try:
     from pypdf import PdfReader
