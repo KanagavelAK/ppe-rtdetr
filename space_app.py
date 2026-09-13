@@ -114,6 +114,13 @@ with gr.Blocks(title="Site Safety Compliance") as demo:
     detect_btn.click(run_detect, [image, confidence], [annotated, details])
     ask_btn.click(run_ask, [image, question, confidence], [answer, details])
 
+
+@api.get("/app/config.json", include_in_schema=False)
+def _space_readiness_probe():
+    """Hugging Face's Gradio runner polls this path before marking the Space live."""
+    return demo.get_config_file()
+
+
 # ssr_mode=False: on Spaces, SSR starts a Node server on 7860 and our uvicorn would lose the port
 app = gr.mount_gradio_app(api, demo, path="/", ssr_mode=False)
 
