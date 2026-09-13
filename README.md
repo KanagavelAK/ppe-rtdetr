@@ -12,214 +12,145 @@ license: mit
 
 # Site Safety Compliance API
 
-RT-DETR fine-tuned on construction-site imagery to detect **person**, **helmet**
-and **head** (a human head with no helmet on it), served through FastAPI, with a
+RT-DETR fine-tuned on construction-site imagery to detect **helmet**, **head**
+(a bare head, no helmet) and **person**, served through FastAPI, with a
 hand-written reasoning layer that answers natural-language questions about an
-image and refuses when the detections do not support an answer.
+image and **refuses, with a reason, when the detections cannot support an
+answer**. Two of the three classes are outside COCO, so no off-the-shelf
+checkpoint can do this.
 
-Two of the three classes are outside COCO, so an off-the-shelf pretrained
-checkpoint cannot do this task.
+| | |
+|---|---|
+| **Live demo + API** | https://kanagavel-ppe-rtdetr.hf.space · Swagger at [`/api/docs`](https://kanagavel-ppe-rtdetr.hf.space/api/docs) |
+| **Weights** | [`best.pt`, 66 MB, GitHub release v1.0](https://github.com/KanagavelAK/ppe-rtdetr/releases/download/v1.0/best.pt) |
+| **Memo** | [memo/MEMO.pdf](memo/MEMO.pdf) (2 pages) · source [memo/MEMO.md](memo/MEMO.md) |
+| **Reproduce training** | [notebooks/kaggle_ppe_rtdetr.ipynb](notebooks/kaggle_ppe_rtdetr.ipynb), Kaggle free tier, one Save & Run All |
+| **Metrics and receipts** | [artifacts/](artifacts/) — `metrics.json`, `training_receipt.json`, `split_stats.json`, `failures/` |
 
 ## Why this problem
 
-Head injuries are among the leading causes of serious harm on construction
-sites, and hard-hat compliance is checked today by a supervisor walking the
-site. Cameras are already installed on most sites. This turns an occasional
-manual spot check into a continuous one, and answers the question a safety
-officer actually asks, which is not "how many helmets are visible" but
-"is anyone working without one".
+Head injury is among the leading causes of serious harm on construction sites,
+and hard-hat compliance is checked today by a supervisor walking the site.
+Cameras are already installed on most sites. The question a safety officer
+asks is not "how many helmets are visible" but "is anyone working without
+one", and that is a relation between boxes, not a count. The reasoning layer
+turns boxes into per-worker facts and refuses to answer when they are not
+enough.
 
-That distinction is the engineering content of this project. The reasoning
-layer turns boxes into per-worker facts (a `helmet` box is a head with a helmet
-on, a `head` box is a bare head, a `person` box with neither resolvable on it
-is a worker of undetermined status) and refuses to answer, with a reason, when
-the facts do not support one.
+## Results
+
+Trained 40 epochs on 3,447 images (2 × T4, 1.71 h). Evaluated on a held-out
+in-domain test split and on SH17, a different dataset never trained on.
+Full numbers: [artifacts/metrics.json](artifacts/metrics.json).
+
+| Split | mAP@50 | mAP@50-95 | Precision | Recall |
+|---|---|---|---|---|
+| In-domain test, 755 images | 0.627 | 0.412 | 0.628 | 0.617 |
+| SH17 out-of-distribution, 600 images | 0.026 | 0.011 | 0.053 | 0.036 |
+
+| Class (in-domain) | Precision | Recall | mAP@50 | mAP@50-95 |
+|---|---|---|---|---|
+| helmet | 0.927 | 0.930 | **0.959** | 0.629 |
+| head | 0.877 | 0.890 | **0.914** | 0.602 |
+| person | 0.078 | 0.029 | 0.008 | 0.005 |
+
+**How to read this.** The two non-COCO classes, which are what the task is
+about, are strong. `person` collapsed because the source dataset draws a
+person box on only ~3 % of workers (497 person vs 12,908 helmet instances in
+training), so the model learned not to predict it; the confusion matrix sends
+person ground truth to background, not to another class. The OOD figure is a
+lower bound: SH17 labels `head` on helmeted heads too, so a correct bare-head
+model scores zero on that class by construction. Both are discussed honestly
+in memo §3.
+
+<p align="center"><img src="artifacts/confusion_matrix.png" width="46%"> <img src="artifacts/PR_curve.png" width="46%"></p>
+
+**Performance.** RT-DETR-L, 32 M parameters, 105 GFLOPs at 640 px.
+Inference: 14.6 ms/image on a T4, ~0.3 s on the Space's borrowed A10G,
+~0.6 s on a laptop CPU, ~2 s on the Space's shared CPU. Weights 66 MB.
 
 ## Architecture
 
-**Part A, detection.** The two datasets never merge: SH17 has its own path that
-only meets the model at evaluation, which is the visual proof it was not
-trained on. `best.pt` fans out to both evaluation and serving, so the API
-loads exactly the checkpoint that was measured.
+**Part A, detection.** The two datasets never merge: SH17 has its own path
+that only meets the model at evaluation. `best.pt` fans out to both evaluation
+and serving, so the API loads exactly the checkpoint that was measured.
 
 ![Part A: detection pipeline](docs/architecture_part_a.svg)
 
 **Part B, reasoning.** Three deterministic steps (`route`, `build_scene`,
 `guardrail`) run before the single optional model call in `compose`. Both
-side exits are correct outputs, not errors: "not about the image" and
-"insufficient information" are answers the system is designed to give.
+side exits are correct outputs, not errors.
 
 ![Part B: reasoning layer](docs/architecture_part_b.svg)
 
-## Layout
+### How the reasoning layer decides
 
-```
-docs/architecture_part_*.svg   the two diagrams above
-scripts/prepare_data.py    Pascal VOC XML -> YOLO, deterministic image-level split
-scripts/prepare_ood.py     SH17 -> a remapped out-of-distribution test set
-scripts/train.py           RT-DETR fine-tune, writes a reproducibility receipt
-scripts/evaluate.py        mAP / precision / recall on in-domain and OOD splits
-scripts/failure_cases.py   mines the worst images and measures why they failed
-scripts/download_weights.py  fetches best.pt from the GitHub release
-memo/MEMO.md, MEMO.pdf     the two-page memo; memo/build_pdf.py renders it
-artifacts/                 metrics, receipt, split stats, failure report + annotated images
-app/detector.py            RT-DETR inference wrapper
-app/scene.py               helmet-to-person association, per-worker compliance
-app/reasoning.py           intent routing, confidence guardrail, answer composition
-app/main.py                FastAPI endpoints
-space_app.py               Gradio demo page + the same API, for a free Hugging Face Space
-tests/test_reasoning.py    routing, association and guardrail tests, no GPU needed
-notebooks/kaggle_ppe_rtdetr.ipynb   self-contained Kaggle notebook: datasets, training, eval, export
-notebooks/build_kaggle_notebook.py  regenerates the notebook from the scripts above
-```
+1. **Route.** A rule pass over a closed vocabulary classifies the question.
+   Two kinds skip the detector: not about the image (*capital of France*) and
+   about the image but outside the class list (*what colour is the truck*).
+   Rules are faster than a model call and cannot hallucinate a route.
+2. **Detect and structure.** `app/scene.py` turns boxes into workers. A
+   `helmet` box is a head with a helmet on and a `head` box is a bare head, so
+   each is one worker's status. Person boxes, when present, refine that: a
+   helmet inside a person box but off their head is being carried and is not
+   credited; a person with nothing resolvable in their head zone is
+   *undetermined*, never compliant and never a violation.
+3. **Guard.** Deterministic, before any language model: refuse on no
+   detections, on all detections below 0.45, and for compliance questions on
+   any undetermined worker. The model is never asked to rate its own
+   confidence.
+4. **Compose.** Only if the guard passes, one direct Anthropic Messages API
+   call phrases the facts. With no `ANTHROPIC_API_KEY` the same facts are
+   phrased from templates and `answer_source` says so, so the API is fully
+   exercisable offline. No agent framework anywhere.
 
-## Data
+## Failure analysis
 
-| | Source | Role |
-|---|---|---|
-| Training | [Safety Helmet Detection](https://www.kaggle.com/datasets/andrewmvd/hard-hat-detection), 5,000 images, Pascal VOC XML, classes helmet / head / person | train, val, in-domain test |
-| Generalisation check | [SH17](https://www.kaggle.com/datasets/mugheesahmad/sh17-dataset-for-ppe-detection), 8,099 images, CC BY-NC-SA 4.0 | out-of-distribution test only, never trained on |
+`scripts/failure_cases.py` ranks test images by error count and measures
+every miss for scale, blur, occlusion and exposure. Five cases are written up
+in memo §4 with the annotated images in [artifacts/failures/](artifacts/failures/).
+What they showed:
 
-The split is a hash of the image file stem, so re-running the preparation
-script never moves an image between splits and re-running it after adding data
-cannot leak a training image into the test set.
+- Genuine model errors are specific: heads under 0.15 % of the image at night,
+  a helmet cut by the frame edge returned as two fragments, a white rice bowl
+  called `helmet`, duplicate boxes from RT-DETR's set prediction (no NMS).
+- Most of the error *count* is the ground truth: unlabelled people in crowds,
+  no `person` boxes, and a mirrored padding border the dataset labels
+  inconsistently.
+- Every duplicate box scored below 0.45, which is why the API's guardrail
+  floor is set there.
 
-SH17 is scraped from stock photography and the training set is real site
-imagery, so the gap between the two mAP numbers is a direct measurement of how
-much of the model's accuracy is dataset-specific.
-
-## Training on the Kaggle free tier
-
-Upload `notebooks/kaggle_ppe_rtdetr.ipynb` as a new Kaggle notebook. Set
-Accelerator GPU T4 x2 and Internet on; no datasets need attaching, both are
-fetched by `kagglehub` inside the notebook. The P100 also works, but Kaggle's
-current torch build has dropped sm_60 kernels, so the notebook's first cell
-detects that and installs torch 2.6 (cu126) before training. RT-DETR is attention heavy:
-batch 8 per GPU at 640 px is the largest that fits reliably on a 16 GB card, so
-the notebook uses batch 16 across the two T4s with DDP. Launch through
-**Save Version, Save and Run All** so a disconnect does not kill the run.
-
-The notebook embeds every script in `scripts/` and `app/`; after changing any
-of them run `python notebooks/build_kaggle_notebook.py` to regenerate it. The
-equivalent shell steps are:
+## Quickstart
 
 ```bash
-python scripts/prepare_data.py --root /kaggle/input/hard-hat-detection --out /kaggle/working/data/ppe
-python scripts/train.py --data /kaggle/working/data/ppe/data.yaml --epochs 40 --batch 16 \
-    --device 0,1 --cache ram --project /kaggle/working/runs --name rtdetr_ppe
-```
-
-Run two epochs first and multiply the reported seconds per epoch out before
-committing the full budget. `training_receipt.json` records the GPU, driver,
-every hyperparameter and the wall-clock time. Copy it into the memo verbatim.
-
-## Evaluation
-
-```bash
-python scripts/evaluate.py --weights runs/rtdetr_ppe/weights/best.pt \
-    --data data/ppe/data.yaml --ood data/ood_sh17/data.yaml --out artifacts/metrics.json
-
-python scripts/failure_cases.py --weights runs/rtdetr_ppe/weights/best.pt \
-    --data data/ppe/data.yaml --top 8 --out artifacts/failures
-```
-
-The failure miner ranks test images by error count, then for every miss it
-measures Laplacian variance over the missed region (blur), box area as a
-fraction of the image (scale), overlap with neighbouring ground-truth boxes
-(occlusion) and mean luminance (exposure). It proposes a cause from those
-measurements. Confirm each one by eye before it goes in the memo.
-
-## Weights
-
-The fine-tuned checkpoint (`best.pt`, 66 MB, optimizer stripped) is a GitHub
-release asset, a plain HTTPS download with no account needed:
-
-**https://github.com/KanagavelAK/ppe-rtdetr/releases/download/v1.0/best.pt**
-
-Three ways to get it, any one is enough:
-
-```bash
-python scripts/download_weights.py          # -> artifacts/best.pt
-```
-
-- Or do nothing: the API downloads it from `WEIGHTS_URL` on first start if
-  `artifacts/best.pt` is missing (`.env.example` and the Dockerfile set it).
-- Or regenerate it: run `notebooks/kaggle_ppe_rtdetr.ipynb` on Kaggle
-  (Save & Run All, GPU T4 x2) and take `best.pt` from the Output tab.
-
-`samples/` holds two images from the held-out test split (chosen by the same
-md5 rule as the split, so they were never trained on) for trying the endpoints
-below. The first request after start-up is slow on CPU (5-8 s, kernel warm-up);
-later requests take roughly 0.6 s.
-
-## Running the API
-
-```bash
+git clone https://github.com/KanagavelAK/ppe-rtdetr && cd ppe-rtdetr
 pip install -r requirements.txt
-cp .env.example .env          # point MODEL_WEIGHTS at the checkpoint
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+cp .env.example .env
+uvicorn app.main:app --host 0.0.0.0 --port 8000     # downloads best.pt on first start
 ```
 
-Interactive docs are at `http://localhost:8000/docs`.
+Swagger UI at http://localhost:8000/docs. Two held-out images are in
+`samples/`. The first request after start-up is slow on CPU (kernel warm-up);
+later ones take about 0.6 s.
 
-With Docker:
+Docker: `docker build -t ppe-api . && docker run -p 8000:8000 ppe-api`
+
+Demo page + API in one process, as deployed on the Space:
+`python space_app.py` → http://localhost:7860
+
+Tests (no GPU or checkpoint needed): `python -m pytest tests -q` — 14 tests
+covering routing, the association rule and the guardrail.
+
+## API
+
+Real responses from the trained model on `samples/site_01.png`. On the live
+Space the paths are prefixed with `/api`.
+
+### `POST /detect` — image → boxes, labels, confidences
 
 ```bash
-docker build -t ppe-api . && docker run -p 8000:8000 --env-file .env ppe-api
+curl -X POST http://localhost:8000/detect -F "file=@samples/site_01.png" -F "confidence=0.25"
 ```
-
-The reasoning layer runs without an `ANTHROPIC_API_KEY`. Without one it answers
-from templates over the same structured facts, so every endpoint is fully
-exercisable offline. With one set, the final phrasing step is a single direct
-Messages API call. No agent framework is used anywhere.
-
-This is deliberate. Routing and the guardrail are the decisions that matter,
-and both are deterministic and run before any model is called. The language
-model only rephrases facts that have already been judged sufficient, so the
-API's correctness does not depend on it, and a reviewer without a key sees
-identical routing, evidence and refusals with `answer_source: "template"`.
-
-## Live deployment
-
-**https://kanagavel-ppe-rtdetr.hf.space** — a free Hugging Face Space (Gradio
-SDK, ZeroGPU). One process serves both:
-
-| | URL |
-|---|---|
-| Demo page (upload, detect, ask) | https://kanagavel-ppe-rtdetr.hf.space/ |
-| Swagger UI | https://kanagavel-ppe-rtdetr.hf.space/api/docs |
-| `GET /health` | https://kanagavel-ppe-rtdetr.hf.space/api/health |
-| `POST /detect`, `POST /ask` | `…hf.space/api/detect`, `…hf.space/api/ask` |
-
-```bash
-curl -X POST https://kanagavel-ppe-rtdetr.hf.space/api/detect   -F "file=@samples/site_01.png" -F "confidence=0.25"
-
-curl -X POST https://kanagavel-ppe-rtdetr.hf.space/api/ask   -F "file=@samples/site_01.png" -F "question=Is anyone not wearing a helmet?"
-```
-
-On the Space the API lives under `/api/` (Gradio owns the root); locally it is
-at the root. The API routes run on CPU (~2 s per image on the Space's shared
-CPU); the demo page's buttons are `@spaces.GPU` functions and get a borrowed
-A10G (~0.3 s). Free Spaces sleep after 48 h without traffic; the first request
-afterwards takes about a minute to wake.
-
-`space_app.py` is the entry point: it mounts the FastAPI app from `app/main.py`
-inside a Gradio app. The YAML block at the top of this README is the Space's
-configuration. To run the same thing locally: `python space_app.py` →
-http://localhost:7860 (page) and http://localhost:7860/docs (API). To deploy
-your own copy: create a Space (SDK Gradio), then `git push` this repo to it.
-
-## Endpoints
-
-### `POST /detect`
-
-```bash
-curl -X POST http://localhost:8000/detect \
-  -F "file=@samples/site_01.png" -F "confidence=0.25"
-```
-
-Real output for that image (CPU, second request; the first after start-up is
-slower while kernels warm up):
 
 ```json
 {
@@ -238,173 +169,163 @@ slower while kernels warm up):
 }
 ```
 
-### `POST /ask`
-
-Compliance question, answerable (real output for `samples/site_01.png`):
+### `POST /ask` — image + question → answer, or an honest refusal
 
 ```bash
-curl -X POST http://localhost:8000/ask \
-  -F "file=@samples/site_01.png" \
+curl -X POST http://localhost:8000/ask -F "file=@samples/site_01.png" \
   -F "question=Is anyone not wearing a helmet?"
 ```
 
 ```json
 {
-  "request_id": "09810af1db03",
   "question": "Is anyone not wearing a helmet?",
   "answer": "Of 4 people detected, 4 are wearing a helmet and 0 are not.",
   "sufficient_information": true,
-  "routing": {
-    "needs_detection": true,
-    "question_kind": "compliance",
-    "rationale": "the question is about who is or is not wearing a helmet, which needs per-person detections",
-    "decided_by": "rules"
-  },
+  "routing": {"needs_detection": true, "question_kind": "compliance",
+              "rationale": "the question is about who is or is not wearing a helmet, which needs per-person detections",
+              "decided_by": "rules"},
   "detector_called": true,
   "guardrail_reasons": [],
   "answer_source": "template",
   "evidence": {
-    "counts": {"helmet": 4},
-    "people_detected": 4,
-    "person_boxes": 0,
-    "compliant_workers": 4,
-    "violations": 0,
-    "undetermined_workers": 0,
-    "helmets_seen_but_not_worn": 0,
-    "max_confidence": 0.9073,
-    "mean_confidence": 0.8918,
-    "workers": [
-      {"id": 0, "status": "compliant", "headgear": "helmet", "headgear_confidence": 0.9073,
-       "note": "status read from the headgear box alone; no person box was detected"},
-      {"id": 1, "status": "compliant", "headgear": "helmet", "headgear_confidence": 0.9052, "note": "..."},
-      {"id": 2, "status": "compliant", "headgear": "helmet", "headgear_confidence": 0.88,   "note": "..."},
-      {"id": 3, "status": "compliant", "headgear": "helmet", "headgear_confidence": 0.8747, "note": "..."}
-    ],
-    "detections": ["... the same four boxes as /detect ..."]
+    "counts": {"helmet": 4}, "people_detected": 4, "person_boxes": 0,
+    "compliant_workers": 4, "violations": 0, "undetermined_workers": 0,
+    "workers": [{"id": 0, "status": "compliant", "headgear": "helmet", "headgear_confidence": 0.9073}, "..."]
   },
   "inference_ms": 805.0
 }
 ```
 
-`answer_source` is `"template"` because no `ANTHROPIC_API_KEY` was set; with one
-it reads `"llm"` and the answer is phrased by the model from the same evidence.
+The three other kinds of answer, with the same fields:
 
-Question that does not need the detector:
+| Question | `question_kind` | `detector_called` | Answer |
+|---|---|---|---|
+| What is the capital of France? | `not_about_the_image` | false | That question is not about the contents of the image, so I did not run the detector. |
+| What colour is the truck? | `out_of_detector_scope` | false | I cannot answer that. This detector only recognises people, helmets and bare heads… |
+| Is anyone not wearing a helmet? *(third worker's head occluded)* | `compliance` | true | I do not have enough information to answer that confidently. 1 of 3 detected people have no helmet and no bare head associated with them… |
 
-```bash
-curl -X POST http://localhost:8000/ask -F "question=What is the capital of France?"
-```
+Every response carries `routing`, `detector_called`, `guardrail_reasons` and
+`answer_source`, so you can see why it answered or refused without logs.
+Errors return a typed `{request_id, error, detail}` with 400 (bad upload) or
+500, and every response has an `x-request-id` header that matches the log line.
 
-```json
-{
-  "request_id": "e7f127a5fea4",
-  "question": "What is the capital of France?",
-  "answer": "That question is not about the contents of the image, so I did not run the detector.",
-  "sufficient_information": false,
-  "routing": {"needs_detection": false, "question_kind": "not_about_the_image",
-              "rationale": "the question asks about something other than the contents of the image, so running the detector would not inform it",
-              "decided_by": "rules"},
-  "detector_called": false,
-  "guardrail_reasons": ["the question asks about something other than the contents of the image, so running the detector would not inform it"],
-  "answer_source": "template",
-  "evidence": null,
-  "inference_ms": null
-}
-```
+### `GET /health`
 
-Question about the image, but outside what the detector can see:
+`{"status": "ok", "model_loaded": true, "weights": "...", "classes": [...], "llm_enabled": false}`
 
-```json
-{
-  "question": "What colour is the truck?",
-  "answer": "I cannot answer that. This detector only recognises people, helmets and bare heads, so the attribute you asked about is outside what it can measure.",
-  "sufficient_information": false,
-  "routing": {"needs_detection": false, "question_kind": "out_of_detector_scope", "decided_by": "rules"},
-  "detector_called": false,
-  "answer_source": "template"
-}
-```
+## Data
 
-Question the detections cannot honestly support (the worked example from
-`tests/test_reasoning.py`: three people, two with helmets, one whose head is
-occluded):
+| | Source | Role |
+|---|---|---|
+| Training | [Safety Helmet Detection](https://www.kaggle.com/datasets/andrewmvd/hard-hat-detection), 5,000 images, Pascal VOC XML | train / val / in-domain test |
+| Generalisation check | [SH17](https://www.kaggle.com/datasets/mugheesahmad/sh17-dataset-for-ppe-detection), 8,099 stock photos, CC BY-NC-SA 4.0 | out-of-distribution test only |
 
-```json
-{
-  "question": "Is anyone not wearing a helmet?",
-  "answer": "I do not have enough information to answer that confidently. 1 of 3 detected people have no helmet and no bare head associated with them, most likely because their head is occluded, cropped or too small to resolve.",
-  "sufficient_information": false,
-  "detector_called": true,
-  "guardrail_reasons": ["1 of 3 detected people have no helmet and no bare head associated with them, most likely because their head is occluded, cropped or too small to resolve"],
-  "answer_source": "template"
-}
-```
+**Split.** `md5(file stem)` bucketed 15 / 15 / 70 into test / val / train at
+image level. The dataset has near-duplicate frames, so a random split would
+inflate test mAP; and because the assignment is a pure function of the
+filename, re-running or adding data can never leak a training image into
+test. The `samples/` images were chosen by the same rule.
 
-## How the reasoning layer decides
+| Split | Images | helmet | head | person |
+|---|---|---|---|---|
+| train | 3,447 | 12,908 | 4,089 | 497 |
+| val | 798 | 3,086 | 811 | 186 |
+| test | 755 | 2,972 | 885 | 68 |
 
-1. **Route.** A deterministic rule pass classifies the question into one of six
-   kinds. Questions naming nothing the detector can see, and questions about
-   visual attributes outside the three classes, both skip detection entirely.
-   Routing is a cheap, closed-vocabulary decision, so a rule set is faster than
-   a model call and cannot hallucinate a route.
-2. **Detect and structure.** The detector runs, then `app/scene.py` turns boxes
-   into workers. In this dataset a `helmet` box is a head with a helmet on and a
-   `head` box is a bare head, so each headgear box is one worker's status. Person
-   boxes, when the model emits them (rarely: see Limits), refine that: a helmet
-   inside a person box but off their head is being carried and is not credited,
-   and a person with no headgear resolvable in their head zone is *undetermined*,
-   never compliant and never a violation.
-3. **Guard.** A deterministic check, before any language model call, decides
-   whether the facts support an answer. Empty detections, an all-weak scene, or
-   any worker whose headgear could not be resolved makes a compliance question
-   unanswerable.
-4. **Compose.** Only if the guard passes does the language model turn the facts
-   into a sentence, and it is instructed to use nothing but those facts.
+## Training and reproducibility
 
-The guardrail is deliberately not the model's own confidence estimate. A model
-asked to grade itself will talk itself into an answer. A rule that says three of
-five workers have no resolvable headgear will not.
+Everything is in one Kaggle notebook: upload
+[notebooks/kaggle_ppe_rtdetr.ipynb](notebooks/kaggle_ppe_rtdetr.ipynb), set
+Accelerator **GPU T4 x2** and Internet **on**, attach no datasets (both are
+fetched by `kagglehub`), and **Save Version → Save & Run All**. It prepares the
+data, trains, evaluates in-domain and OOD, mines failure cases, checks the
+reasoning layer end to end, and zips `best.pt` with every receipt.
 
-## Tests
+| | |
+|---|---|
+| Model | `rtdetr-l.pt` (COCO-pretrained) → 3 classes |
+| Hardware | Kaggle free tier, 2 × Tesla T4 15 GB, DDP |
+| Software | Python 3.12, torch 2.10+cu128, Ultralytics 8.3.40 |
+| Hyperparameters | 40 epochs, batch 16 (8 per GPU), imgsz 640, AdamW, lr0 1e-4, AMP, RAM cache, seed 0, patience 12 |
+| Wall-clock | 6,168 s (1.71 h) — [artifacts/training_receipt.json](artifacts/training_receipt.json) |
+
+The notebook embeds every script in `scripts/` and `app/`; after changing any
+of them run `python notebooks/build_kaggle_notebook.py` to regenerate it. The
+equivalent shell steps:
 
 ```bash
-python -m pytest tests -q
+python scripts/prepare_data.py --root <hard-hat-dataset> --out data/ppe
+python scripts/train.py --data data/ppe/data.yaml --epochs 40 --batch 16 --device 0,1 --cache ram
+python scripts/prepare_ood.py --root <sh17-dataset> --out data/ood_sh17 --limit 600
+python scripts/evaluate.py --weights runs/rtdetr_ppe/weights/best.pt --data data/ppe/data.yaml --ood data/ood_sh17/data.yaml
+python scripts/failure_cases.py --weights runs/rtdetr_ppe/weights/best.pt --data data/ppe/data.yaml --top 8
 ```
 
-Fourteen tests cover routing, the association rule (including a helmet carried
-by a visible worker that must not be credited, and headgear with no person box
-that must be), and the guardrail's insufficient-information path. None of them
-need a GPU or a checkpoint.
+## Deployment
+
+The live instance is a free Hugging Face Space (Gradio SDK, ZeroGPU).
+`space_app.py` mounts the FastAPI app inside a Gradio app, so one process
+serves the demo page at `/` and the API under `/api/`. The demo's buttons are
+`@spaces.GPU` functions and borrow an A10G; the API routes run on CPU. Free
+Spaces sleep after 48 h idle and wake in about a minute on the next request.
+The YAML block at the top of this file is the Space's configuration; to deploy
+your own copy, create a Space with SDK Gradio and push this repo to it.
+
+## Repository layout
+
+```
+app/main.py                 FastAPI: /health, /detect, /ask
+app/detector.py             RT-DETR inference wrapper; downloads weights if missing
+app/scene.py                boxes -> per-worker compliance facts
+app/reasoning.py            routing, guardrail, answer composition
+app/schemas.py              response models
+space_app.py                Gradio demo page + the same API (Hugging Face Space)
+scripts/prepare_data.py     Pascal VOC -> YOLO, deterministic image-level split
+scripts/prepare_ood.py      SH17 -> remapped out-of-distribution test set
+scripts/train.py            RT-DETR fine-tune; writes training_receipt.json
+scripts/evaluate.py         mAP / precision / recall, in-domain and OOD
+scripts/failure_cases.py    worst images with measured root causes
+scripts/download_weights.py fetches best.pt from the GitHub release
+tests/test_reasoning.py     14 tests, no GPU needed
+notebooks/                  the Kaggle notebook and its generator
+artifacts/                  metrics, receipts, plots, failure report + images
+docs/                       the two architecture diagrams
+memo/                       MEMO.md, MEMO.pdf, build_pdf.py
+samples/                    two held-out test images
+```
 
 ## How this maps to the brief
 
-| Brief requirement | Where to check |
+| Requirement | Where |
 |---|---|
-| RT-DETR, own training code, no AutoML | `scripts/train.py` (Ultralytics RT-DETR-L, one `model.train` call, every hyperparameter on the CLI) |
+| RT-DETR, own training code, no AutoML | `scripts/train.py` |
 | At least one non-COCO class | `helmet`, `head` |
-| Own dataset, sourcing and split documented | `scripts/prepare_data.py`, `artifacts/split_stats.json`, memo sections 1-2 |
-| mAP, precision/recall, confusion behaviour | `scripts/evaluate.py`, `artifacts/metrics.json`, confusion matrix from the run, memo section 3 |
-| FastAPI: image in, boxes + labels + confidences out | `POST /detect` |
-| Second endpoint: intent routing, structured reasoning, confidence guardrail | `POST /ask`; `app/reasoning.py:route`, `app/scene.py:build_scene`, `app/reasoning.py:guardrail` |
-| Explicit "insufficient information" | `guardrail()` + `insufficient_message()`; worked example in `tests/test_reasoning.py` and memo section 5 |
-| No agentic frameworks | `requirements.txt` has none; `grep -ri langchain\|crewai\|autogen\|langgraph` is empty |
-| Reproducibility: steps, environment, hardware, time, hyperparameters | `notebooks/kaggle_ppe_rtdetr.ipynb`, `requirements.txt`, `Dockerfile`, `artifacts/training_receipt.json` |
-| Weights with a working load path | GitHub release v1.0 + `scripts/download_weights.py` + auto-fetch in `app/detector.py` |
-| Five failure cases with root cause | `scripts/failure_cases.py`, `artifacts/failures/`, memo section 4 |
-| API usage with sample payloads for both endpoints | Endpoints section above, `samples/` |
-| Bonus: Docker, server deployment, logging, error handling | `Dockerfile` with healthcheck; live Hugging Face Space (above); request-id middleware; typed `ErrorResponse` on 400/500 |
+| Own dataset, sourcing and split documented | Data section, memo §1-2, `artifacts/split_stats.json` |
+| mAP, precision/recall, confusion behaviour | Results section, `artifacts/metrics.json`, confusion matrix |
+| FastAPI: image → boxes, labels, confidences | `POST /detect` |
+| Second endpoint: routing, structured reasoning, guardrail | `POST /ask`; `route()`, `build_scene()`, `guardrail()` |
+| Explicit "insufficient information" | `guardrail()` + `insufficient_message()`; worked example in tests and memo §5 |
+| No agentic frameworks | none in `requirements.txt`; the control flow is four function calls |
+| Reproducibility: steps, environment, hardware, time, hyperparameters | notebook, `requirements.txt`, Dockerfile, `training_receipt.json` |
+| Weights with a working load path | GitHub release + `scripts/download_weights.py` + auto-fetch in `app/detector.py` |
+| Five failure cases with root cause | memo §4, `artifacts/failures/` |
+| API usage with sample payloads | API section, `samples/` |
+| Bonus: Docker, deployment, logging, error handling | `Dockerfile`, live Space, request-id middleware, typed errors |
 
 ## Limits
 
 - Three classes only. Vests, gloves, harnesses and boots are not detected, and
   the API says so rather than guessing.
-- The `person` class barely works (test mAP50 0.008, recall 0.03) because the
-  source dataset draws a person box on only ~3 percent of workers (497 person
-  vs 12,908 helmet instances in training), so the model learned not to predict
-  it. Helmet (mAP50 0.96) and bare head (0.91) are strong, and compliance is
-  computed from those. The cost is that a helmet the model sees but nobody is
-  wearing, with no person box around it to say so, is counted as a compliant
-  worker.
-- Training images are predominantly daytime outdoor construction scenes. Indoor
-  industrial and low-light footage is outside the training distribution, which
-  is what the SH17 number partially measures.
+- `person` is effectively not detected (recall 0.03) because of the source
+  labelling convention. Compliance is computed from helmet and head boxes, so
+  a helmet the model sees but nobody is wearing, with no person box around it
+  to say so, counts as a compliant worker.
+- Training images are daytime outdoor construction scenes at 416 px. Night,
+  indoor and close-up footage is outside the distribution; the SH17 number
+  is a partial measure of that.
+
+## Licence
+
+MIT for the code (see [LICENSE](LICENSE)). The training data is the Kaggle
+Safety Helmet Detection dataset; see its page for the data licence. SH17 is
+CC BY-NC-SA 4.0 and was used for evaluation only.
