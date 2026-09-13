@@ -114,7 +114,8 @@ with gr.Blocks(title="Site Safety Compliance") as demo:
     detect_btn.click(run_detect, [image, confidence], [annotated, details])
     ask_btn.click(run_ask, [image, question, confidence], [answer, details])
 
-app = gr.mount_gradio_app(api, demo, path="/")
+# ssr_mode=False: on Spaces, SSR starts a Node server on 7860 and our uvicorn would lose the port
+app = gr.mount_gradio_app(api, demo, path="/", ssr_mode=False)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "7860")))
