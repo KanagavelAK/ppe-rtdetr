@@ -1,2 +1,3 @@
-Two images from the held-out test split, copied out of the Kaggle artifacts zip
-(artifacts/samples/). Used by the curl examples in the README.
+Two images from the held-out test split of the hard-hat dataset, chosen with the
+same md5(file stem) rule as scripts/prepare_data.py, so neither was trained on.
+The README's curl examples use site_01.png.

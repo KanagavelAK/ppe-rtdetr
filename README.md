@@ -29,11 +29,11 @@ manual spot check into a continuous one, and answers the question a safety
 officer actually asks, which is not "how many helmets are visible" but
 "is anyone working without one".
 
-That distinction is the engineering content of this project. Counting helmets
-and counting people and subtracting gives the wrong answer the moment a helmet
-is sitting on a bench or a worker is partly out of frame. The reasoning layer
-associates each helmet with a person by spatial containment, and reports any
-worker it cannot resolve as undetermined rather than guessing.
+That distinction is the engineering content of this project. The reasoning
+layer turns boxes into per-worker facts (a `helmet` box is a head with a helmet
+on, a `head` box is a bare head, a `person` box with neither resolvable on it
+is a worker of undetermined status) and refuses to answer, with a reason, when
+the facts do not support one.
 
 ## Architecture
 
@@ -131,7 +131,7 @@ measurements. Confirm each one by eye before it goes in the memo.
 
 ## Weights
 
-The fine-tuned checkpoint (198 MB) is published as a public Kaggle dataset:
+The fine-tuned checkpoint (`best.pt`, 66 MB, optimizer stripped) is published as a public Kaggle dataset:
 **https://www.kaggle.com/datasets/kanagavelak/ppe-rtdetr-weights**
 
 Three ways to get it, any one is enough:
@@ -209,26 +209,29 @@ curl -X POST http://localhost:8000/detect \
   -F "file=@samples/site_01.png" -F "confidence=0.25"
 ```
 
+Real output for that image (CPU, second request; the first after start-up is
+slower while kernels warm up):
+
 ```json
 {
-  "request_id": "3f9a21c0b7de",
-  "image": {"width": 1024, "height": 683},
+  "request_id": "261ae5f73801",
+  "image": {"width": 416, "height": 415},
   "confidence_threshold": 0.25,
   "count": 4,
-  "counts_by_class": {"person": 2, "helmet": 1, "head": 1},
+  "counts_by_class": {"helmet": 4},
   "detections": [
-    {"label": "person", "confidence": 0.9412, "box_xyxy": [102.4, 98.7, 214.9, 402.1]},
-    {"label": "helmet", "confidence": 0.9078, "box_xyxy": [131.2, 104.5, 172.8, 141.0]},
-    {"label": "person", "confidence": 0.8933, "box_xyxy": [301.0, 118.2, 408.6, 421.7]},
-    {"label": "head",   "confidence": 0.8241, "box_xyxy": [332.5, 124.0, 371.9, 160.3]}
+    {"label": "helmet", "confidence": 0.9073, "box_xyxy": [292.7, 103.0, 370.8, 197.1]},
+    {"label": "helmet", "confidence": 0.9052, "box_xyxy": [75.7, 96.5, 159.3, 196.2]},
+    {"label": "helmet", "confidence": 0.88,   "box_xyxy": [291.1, 0.1, 374.2, 34.4]},
+    {"label": "helmet", "confidence": 0.8747, "box_xyxy": [68.7, -0.1, 165.0, 41.8]}
   ],
-  "inference_ms": 84.3
+  "inference_ms": 735.0
 }
 ```
 
 ### `POST /ask`
 
-Compliance question, answerable:
+Compliance question, answerable (real output for `samples/site_01.png`):
 
 ```bash
 curl -X POST http://localhost:8000/ask \
@@ -238,9 +241,9 @@ curl -X POST http://localhost:8000/ask \
 
 ```json
 {
-  "request_id": "7c1de4a90b22",
+  "request_id": "09810af1db03",
   "question": "Is anyone not wearing a helmet?",
-  "answer": "Yes. Of the 2 people detected, 1 is wearing a helmet and 1 is not.",
+  "answer": "Of 4 people detected, 4 are wearing a helmet and 0 are not.",
   "sufficient_information": true,
   "routing": {
     "needs_detection": true,
@@ -250,20 +253,32 @@ curl -X POST http://localhost:8000/ask \
   },
   "detector_called": true,
   "guardrail_reasons": [],
-  "answer_source": "llm",
+  "answer_source": "template",
   "evidence": {
-    "counts": {"person": 2, "helmet": 1, "head": 1},
-    "compliant_workers": 1,
-    "violations": 1,
+    "counts": {"helmet": 4},
+    "people_detected": 4,
+    "person_boxes": 0,
+    "compliant_workers": 4,
+    "violations": 0,
     "undetermined_workers": 0,
+    "helmets_seen_but_not_worn": 0,
+    "max_confidence": 0.9073,
+    "mean_confidence": 0.8918,
     "workers": [
-      {"id": 0, "status": "compliant", "headgear": "helmet", "headgear_confidence": 0.9078},
-      {"id": 1, "status": "violation", "headgear": "head", "headgear_confidence": 0.8241}
-    ]
+      {"id": 0, "status": "compliant", "headgear": "helmet", "headgear_confidence": 0.9073,
+       "note": "status read from the headgear box alone; no person box was detected"},
+      {"id": 1, "status": "compliant", "headgear": "helmet", "headgear_confidence": 0.9052, "note": "..."},
+      {"id": 2, "status": "compliant", "headgear": "helmet", "headgear_confidence": 0.88,   "note": "..."},
+      {"id": 3, "status": "compliant", "headgear": "helmet", "headgear_confidence": 0.8747, "note": "..."}
+    ],
+    "detections": ["... the same four boxes as /detect ..."]
   },
-  "inference_ms": 81.6
+  "inference_ms": 805.0
 }
 ```
+
+`answer_source` is `"template"` because no `ANTHROPIC_API_KEY` was set; with one
+it reads `"llm"` and the answer is phrased by the model from the same evidence.
 
 Question that does not need the detector:
 
@@ -273,16 +288,37 @@ curl -X POST http://localhost:8000/ask -F "question=What is the capital of Franc
 
 ```json
 {
+  "request_id": "e7f127a5fea4",
   "question": "What is the capital of France?",
   "answer": "That question is not about the contents of the image, so I did not run the detector.",
   "sufficient_information": false,
-  "routing": {"needs_detection": false, "question_kind": "not_about_the_image"},
+  "routing": {"needs_detection": false, "question_kind": "not_about_the_image",
+              "rationale": "the question asks about something other than the contents of the image, so running the detector would not inform it",
+              "decided_by": "rules"},
+  "detector_called": false,
+  "guardrail_reasons": ["the question asks about something other than the contents of the image, so running the detector would not inform it"],
+  "answer_source": "template",
+  "evidence": null,
+  "inference_ms": null
+}
+```
+
+Question about the image, but outside what the detector can see:
+
+```json
+{
+  "question": "What colour is the truck?",
+  "answer": "I cannot answer that. This detector only recognises people, helmets and bare heads, so the attribute you asked about is outside what it can measure.",
+  "sufficient_information": false,
+  "routing": {"needs_detection": false, "question_kind": "out_of_detector_scope", "decided_by": "rules"},
   "detector_called": false,
   "answer_source": "template"
 }
 ```
 
-Question the detections cannot honestly support:
+Question the detections cannot honestly support (the worked example from
+`tests/test_reasoning.py`: three people, two with helmets, one whose head is
+occluded):
 
 ```json
 {
@@ -290,7 +326,8 @@ Question the detections cannot honestly support:
   "answer": "I do not have enough information to answer that confidently. 1 of 3 detected people have no helmet and no bare head associated with them, most likely because their head is occluded, cropped or too small to resolve.",
   "sufficient_information": false,
   "detector_called": true,
-  "guardrail_reasons": ["1 of 3 detected people have no helmet and no bare head associated with them, ..."]
+  "guardrail_reasons": ["1 of 3 detected people have no helmet and no bare head associated with them, most likely because their head is occluded, cropped or too small to resolve"],
+  "answer_source": "template"
 }
 ```
 
@@ -325,9 +362,10 @@ five workers have no resolvable headgear will not.
 python -m pytest tests -q
 ```
 
-Twelve tests cover routing, the association rule including a helmet lying on
-the ground that must not be credited to a worker, and the guardrail's
-insufficient-information path. None of them need a GPU or a checkpoint.
+Fourteen tests cover routing, the association rule (including a helmet carried
+by a visible worker that must not be credited, and headgear with no person box
+that must be), and the guardrail's insufficient-information path. None of them
+need a GPU or a checkpoint.
 
 ## How this maps to the brief
 
