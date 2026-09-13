@@ -62,9 +62,9 @@ Accelerator GPU T4 x2 and Internet on; no datasets need attaching, both are
 fetched by `kagglehub` inside the notebook. The P100 also works, but Kaggle's
 current torch build has dropped sm_60 kernels, so the notebook's first cell
 detects that and installs torch 2.6 (cu126) before training. RT-DETR is attention heavy:
-batch 8 at 640 px is the largest that fits reliably, batch 16 runs out of
-memory on a 16 GB card. Launch through **Save Version, Save and Run All** so a
-disconnect does not kill the run.
+batch 8 per GPU at 640 px is the largest that fits reliably on a 16 GB card, so
+the notebook uses batch 16 across the two T4s with DDP. Launch through
+**Save Version, Save and Run All** so a disconnect does not kill the run.
 
 The notebook embeds every script in `scripts/` and `app/`; after changing any
 of them run `python notebooks/build_kaggle_notebook.py` to regenerate it. The
@@ -72,8 +72,8 @@ equivalent shell steps are:
 
 ```bash
 python scripts/prepare_data.py --root /kaggle/input/hard-hat-detection --out /kaggle/working/data/ppe
-python scripts/train.py --data /kaggle/working/data/ppe/data.yaml --epochs 40 --batch 8 \
-    --project /kaggle/working/runs --name rtdetr_ppe
+python scripts/train.py --data /kaggle/working/data/ppe/data.yaml --epochs 40 --batch 16 \
+    --device 0,1 --cache ram --project /kaggle/working/runs --name rtdetr_ppe
 ```
 
 Run two epochs first and multiply the reported seconds per epoch out before
@@ -167,7 +167,7 @@ Compliance question, answerable:
 
 ```bash
 curl -X POST http://localhost:8000/ask \
-  -F "file=@samples/site.jpg" \
+  -F "file=@samples/site_01.png" \
   -F "question=Is anyone not wearing a helmet?"
 ```
 
