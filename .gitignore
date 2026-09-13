@@ -8,3 +8,5 @@ data/
 artifacts/*.pt
 *.egg-info/
 .pytest_cache/
+.gradio/
+flagged/

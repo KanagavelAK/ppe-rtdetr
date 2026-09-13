@@ -1,3 +1,15 @@
+---
+title: Site Safety Compliance API
+emoji: 🦺
+colorFrom: yellow
+colorTo: gray
+sdk: gradio
+sdk_version: 5.49.1
+app_file: space_app.py
+pinned: false
+license: mit
+---
+
 # Site Safety Compliance API
 
 RT-DETR fine-tuned on construction-site imagery to detect **person**, **helmet**
@@ -55,6 +67,7 @@ app/detector.py            RT-DETR inference wrapper
 app/scene.py               helmet-to-person association, per-worker compliance
 app/reasoning.py           intent routing, confidence guardrail, answer composition
 app/main.py                FastAPI endpoints
+space_app.py               Gradio demo page + the same API, for a free Hugging Face Space
 tests/test_reasoning.py    routing, association and guardrail tests, no GPU needed
 notebooks/kaggle_ppe_rtdetr.ipynb   self-contained Kaggle notebook: datasets, training, eval, export
 notebooks/build_kaggle_notebook.py  regenerates the notebook from the scripts above
@@ -164,6 +177,28 @@ and both are deterministic and run before any model is called. The language
 model only rephrases facts that have already been judged sufficient, so the
 API's correctness does not depend on it, and a reviewer without a key sees
 identical routing, evidence and refusals with `answer_source: "template"`.
+
+## Deployment (Hugging Face Space, free CPU tier)
+
+`space_app.py` mounts the FastAPI app inside a Gradio app, so one free Space
+serves the demo page at `/` and the unchanged API at `/detect`, `/ask`, `/docs`.
+The YAML block at the top of this README is the Space's configuration.
+
+```bash
+python space_app.py            # local: http://localhost:7860  (page)  and /docs (API)
+```
+
+To publish: create a Space (SDK **Gradio**, hardware **CPU basic**), then
+
+```bash
+git remote add hf https://huggingface.co/spaces/<your-hf-username>/ppe-rtdetr
+git push hf main
+```
+
+The Space installs `requirements.txt`, downloads `best.pt` from the Kaggle
+dataset on first start (`WEIGHTS_KAGGLE_DATASET`), and listens on 7860. Free
+Spaces sleep after 48 h without traffic; the first request afterwards takes
+about a minute to wake. Live instance: **TODO: paste the Space URL here**.
 
 ## Endpoints
 

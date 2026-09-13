@@ -16,6 +16,9 @@ pydantic>=2.9
 # Reasoning layer (optional at runtime; the API falls back to templates)
 anthropic>=1.0
 
+# Hugging Face Space demo page (space_app.py); not needed for the API alone
+gradio>=5.0
+
 # Dev
 pytest==8.3.4
 httpx==0.27.2
