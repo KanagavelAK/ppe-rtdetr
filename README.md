@@ -179,27 +179,35 @@ model only rephrases facts that have already been judged sufficient, so the
 API's correctness does not depend on it, and a reviewer without a key sees
 identical routing, evidence and refusals with `answer_source: "template"`.
 
-## Deployment (Hugging Face Space, free CPU tier)
+## Live deployment
 
-`space_app.py` mounts the FastAPI app inside a Gradio app, so one free Space
-serves the demo page at `/` and the unchanged API at `/detect`, `/ask`, `/docs`.
-The YAML block at the top of this README is the Space's configuration.
+**https://kanagavel-ppe-rtdetr.hf.space** — a free Hugging Face Space (Gradio
+SDK, ZeroGPU). One process serves both:
+
+| | URL |
+|---|---|
+| Demo page (upload, detect, ask) | https://kanagavel-ppe-rtdetr.hf.space/ |
+| Swagger UI | https://kanagavel-ppe-rtdetr.hf.space/api/docs |
+| `GET /health` | https://kanagavel-ppe-rtdetr.hf.space/api/health |
+| `POST /detect`, `POST /ask` | `…hf.space/api/detect`, `…hf.space/api/ask` |
 
 ```bash
-python space_app.py            # local: http://localhost:7860  (page)  and /docs (API)
+curl -X POST https://kanagavel-ppe-rtdetr.hf.space/api/detect   -F "file=@samples/site_01.png" -F "confidence=0.25"
+
+curl -X POST https://kanagavel-ppe-rtdetr.hf.space/api/ask   -F "file=@samples/site_01.png" -F "question=Is anyone not wearing a helmet?"
 ```
 
-To publish: create a Space (SDK **Gradio**, hardware **CPU basic**), then
+On the Space the API lives under `/api/` (Gradio owns the root); locally it is
+at the root. The API routes run on CPU (~2 s per image on the Space's shared
+CPU); the demo page's buttons are `@spaces.GPU` functions and get a borrowed
+A10G (~0.3 s). Free Spaces sleep after 48 h without traffic; the first request
+afterwards takes about a minute to wake.
 
-```bash
-git remote add hf https://huggingface.co/spaces/<your-hf-username>/ppe-rtdetr
-git push hf main
-```
-
-The Space installs `requirements.txt`, downloads `best.pt` from the GitHub
-release on first start (`WEIGHTS_URL`), and listens on 7860. Free
-Spaces sleep after 48 h without traffic; the first request afterwards takes
-about a minute to wake. Live instance: **TODO: paste the Space URL here**.
+`space_app.py` is the entry point: it mounts the FastAPI app from `app/main.py`
+inside a Gradio app. The YAML block at the top of this README is the Space's
+configuration. To run the same thing locally: `python space_app.py` →
+http://localhost:7860 (page) and http://localhost:7860/docs (API). To deploy
+your own copy: create a Space (SDK Gradio), then `git push` this repo to it.
 
 ## Endpoints
 
@@ -384,7 +392,7 @@ need a GPU or a checkpoint.
 | Weights with a working load path | GitHub release v1.0 + `scripts/download_weights.py` + auto-fetch in `app/detector.py` |
 | Five failure cases with root cause | `scripts/failure_cases.py`, `artifacts/failures/`, memo section 4 |
 | API usage with sample payloads for both endpoints | Endpoints section above, `samples/` |
-| Bonus: Docker, logging, error handling | `Dockerfile` with healthcheck; request-id middleware; typed `ErrorResponse` on 400/500 |
+| Bonus: Docker, server deployment, logging, error handling | `Dockerfile` with healthcheck; live Hugging Face Space (above); request-id middleware; typed `ErrorResponse` on 400/500 |
 
 ## Limits
 

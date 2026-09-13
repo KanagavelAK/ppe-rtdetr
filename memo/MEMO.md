@@ -164,6 +164,7 @@ GPU), imgsz 640, AdamW, lr0 1e-4, AMP, seed 0, patience 12. **Wall-clock
 6,168 s (1.71 h).** Weights `best.pt` 66 MB: github.com/KanagavelAK/ppe-rtdetr/releases/download/v1.0/best.pt
 (or `python scripts/download_weights.py`). Exact steps:
 `notebooks/kaggle_ppe_rtdetr.ipynb`, Save & Run All, no datasets attached.
+**Live API and demo:** kanagavel-ppe-rtdetr.hf.space (Swagger at `/api/docs`).
 
 ## 7. What I tried first and changed
 
