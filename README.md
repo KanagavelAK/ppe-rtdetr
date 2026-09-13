@@ -49,6 +49,8 @@ scripts/train.py           RT-DETR fine-tune, writes a reproducibility receipt
 scripts/evaluate.py        mAP / precision / recall on in-domain and OOD splits
 scripts/failure_cases.py   mines the worst images and measures why they failed
 scripts/download_weights.py  fetches best.pt from the public Kaggle dataset
+memo/MEMO.md, MEMO.pdf     the two-page memo; memo/build_pdf.py renders it
+artifacts/                 metrics, receipt, split stats, failure report + annotated images
 app/detector.py            RT-DETR inference wrapper
 app/scene.py               helmet-to-person association, per-worker compliance
 app/reasoning.py           intent routing, confidence guardrail, answer composition

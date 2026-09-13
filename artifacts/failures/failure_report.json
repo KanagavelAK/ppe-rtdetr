@@ -1,0 +1,1461 @@
+{
+  "conf": 0.25,
+  "iou_match": 0.5,
+  "images_with_errors": 412,
+  "worst": [
+    {
+      "image": "hard_hat_workers360.png",
+      "ground_truth_count": 20,
+      "prediction_count": 31,
+      "error_count": 19,
+      "errors": [
+        {
+          "kind": "missed_detection",
+          "true_class": "head",
+          "predicted_class": null,
+          "box_xyxy": [
+            337.0,
+            190.0,
+            352.0,
+            206.0
+          ],
+          "best_iou": 0.0,
+          "scale_fraction": 0.00139,
+          "max_overlap_with_other_gt": 0.0,
+          "blur_laplacian_var": 2481.5,
+          "mean_luminance": 58.16,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        },
+        {
+          "kind": "missed_detection",
+          "true_class": "head",
+          "predicted_class": null,
+          "box_xyxy": [
+            82.0,
+            213.0,
+            97.0,
+            229.0
+          ],
+          "best_iou": 0.0,
+          "scale_fraction": 0.00139,
+          "max_overlap_with_other_gt": 0.0,
+          "blur_laplacian_var": 1277.51,
+          "mean_luminance": 44.33,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area",
+            "underexposed region"
+          ]
+        },
+        {
+          "kind": "missed_detection",
+          "true_class": "head",
+          "predicted_class": null,
+          "box_xyxy": [
+            269.0,
+            159.0,
+            282.0,
+            173.0
+          ],
+          "best_iou": 0.02,
+          "scale_fraction": 0.00105,
+          "max_overlap_with_other_gt": 0.0,
+          "blur_laplacian_var": 707.93,
+          "mean_luminance": 117.51,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        },
+        {
+          "kind": "missed_detection",
+          "true_class": "head",
+          "predicted_class": null,
+          "box_xyxy": [
+            135.0,
+            206.0,
+            148.0,
+            223.0
+          ],
+          "best_iou": 0.0,
+          "scale_fraction": 0.00128,
+          "max_overlap_with_other_gt": 0.097,
+          "blur_laplacian_var": 971.63,
+          "mean_luminance": 34.32,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area",
+            "underexposed region"
+          ]
+        }
+      ],
+      "false_positives": [
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.663,
+          "box_xyxy": [
+            190.2,
+            179.5,
+            203.2,
+            196.7
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.454,
+          "box_xyxy": [
+            17.3,
+            253.2,
+            26.9,
+            270.6
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.665,
+          "box_xyxy": [
+            178.4,
+            186.1,
+            193.8,
+            202.3
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.452,
+          "box_xyxy": [
+            0.4,
+            399.7,
+            37.5,
+            416.0
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.327,
+          "box_xyxy": [
+            241.2,
+            170.1,
+            254.0,
+            186.3
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.44,
+          "box_xyxy": [
+            120.3,
+            153.8,
+            133.3,
+            167.2
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.326,
+          "box_xyxy": [
+            201.0,
+            169.0,
+            210.8,
+            180.8
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.316,
+          "box_xyxy": [
+            61.2,
+            246.6,
+            73.3,
+            262.0
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.285,
+          "box_xyxy": [
+            336.2,
+            213.0,
+            353.5,
+            228.2
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.267,
+          "box_xyxy": [
+            178.8,
+            186.5,
+            193.6,
+            202.5
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.414,
+          "box_xyxy": [
+            201.1,
+            169.1,
+            210.7,
+            181.1
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.306,
+          "box_xyxy": [
+            256.2,
+            167.1,
+            270.4,
+            184.0
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.321,
+          "box_xyxy": [
+            134.3,
+            184.9,
+            148.2,
+            205.6
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.255,
+          "box_xyxy": [
+            74.3,
+            238.1,
+            89.4,
+            255.3
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.274,
+          "box_xyxy": [
+            179.5,
+            0.1,
+            202.3,
+            6.3
+          ]
+        }
+      ]
+    },
+    {
+      "image": "hard_hat_workers3822.png",
+      "ground_truth_count": 13,
+      "prediction_count": 26,
+      "error_count": 15,
+      "errors": [
+        {
+          "kind": "missed_detection",
+          "true_class": "helmet",
+          "predicted_class": null,
+          "box_xyxy": [
+            376.0,
+            12.0,
+            390.0,
+            26.0
+          ],
+          "best_iou": 0.453,
+          "scale_fraction": 0.00114,
+          "max_overlap_with_other_gt": 0.0,
+          "blur_laplacian_var": 4931.85,
+          "mean_luminance": 123.1,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        }
+      ],
+      "false_positives": [
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.469,
+          "box_xyxy": [
+            374.0,
+            2.8,
+            391.5,
+            25.1
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.677,
+          "box_xyxy": [
+            23.8,
+            107.2,
+            42.9,
+            126.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.694,
+          "box_xyxy": [
+            339.3,
+            0.3,
+            393.4,
+            12.7
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.704,
+          "box_xyxy": [
+            0.1,
+            109.5,
+            9.9,
+            133.5
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.538,
+          "box_xyxy": [
+            320.3,
+            113.2,
+            346.9,
+            137.7
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.408,
+          "box_xyxy": [
+            24.0,
+            12.2,
+            45.0,
+            33.6
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.464,
+          "box_xyxy": [
+            180.8,
+            0.0,
+            203.2,
+            12.0
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.663,
+          "box_xyxy": [
+            165.3,
+            356.9,
+            193.5,
+            385.6
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.406,
+          "box_xyxy": [
+            104.4,
+            0.3,
+            124.1,
+            14.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.692,
+          "box_xyxy": [
+            0.0,
+            4.6,
+            9.9,
+            29.0
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.28,
+          "box_xyxy": [
+            304.2,
+            0.1,
+            345.2,
+            10.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.332,
+          "box_xyxy": [
+            299.9,
+            121.3,
+            321.9,
+            141.9
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.366,
+          "box_xyxy": [
+            319.4,
+            0.4,
+            346.4,
+            24.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.252,
+          "box_xyxy": [
+            392.5,
+            0.1,
+            414.1,
+            6.9
+          ]
+        }
+      ]
+    },
+    {
+      "image": "hard_hat_workers429.png",
+      "ground_truth_count": 22,
+      "prediction_count": 30,
+      "error_count": 15,
+      "errors": [
+        {
+          "kind": "class_confusion",
+          "true_class": "helmet",
+          "predicted_class": "head",
+          "box_xyxy": [
+            187.0,
+            131.0,
+            201.0,
+            155.0
+          ],
+          "best_iou": 0.843,
+          "scale_fraction": 0.00195,
+          "max_overlap_with_other_gt": 0.267,
+          "blur_laplacian_var": 2833.87,
+          "mean_luminance": 148.5,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area",
+            "class confusion: predicted head for a helmet"
+          ]
+        },
+        {
+          "kind": "missed_detection",
+          "true_class": "helmet",
+          "predicted_class": null,
+          "box_xyxy": [
+            205.0,
+            -0.0,
+            219.0,
+            4.0
+          ],
+          "best_iou": 0.01,
+          "scale_fraction": 0.00032,
+          "max_overlap_with_other_gt": 0.046,
+          "blur_laplacian_var": 2204.52,
+          "mean_luminance": 183.21,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        },
+        {
+          "kind": "missed_detection",
+          "true_class": "helmet",
+          "predicted_class": null,
+          "box_xyxy": [
+            187.0,
+            0.0,
+            202.0,
+            8.0
+          ],
+          "best_iou": 0.0,
+          "scale_fraction": 0.0007,
+          "max_overlap_with_other_gt": 0.209,
+          "blur_laplacian_var": 1643.22,
+          "mean_luminance": 171.82,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        },
+        {
+          "kind": "missed_detection",
+          "true_class": "head",
+          "predicted_class": null,
+          "box_xyxy": [
+            270.0,
+            0.0,
+            291.0,
+            11.0
+          ],
+          "best_iou": 0.045,
+          "scale_fraction": 0.00134,
+          "max_overlap_with_other_gt": 0.131,
+          "blur_laplacian_var": 1610.66,
+          "mean_luminance": 72.86,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        }
+      ],
+      "false_positives": [
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.658,
+          "box_xyxy": [
+            257.1,
+            0.4,
+            271.6,
+            11.5
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.489,
+          "box_xyxy": [
+            402.6,
+            127.4,
+            413.2,
+            138.7
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.437,
+          "box_xyxy": [
+            270.4,
+            128.0,
+            285.8,
+            146.0
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.528,
+          "box_xyxy": [
+            401.5,
+            0.4,
+            414.1,
+            9.8
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.381,
+          "box_xyxy": [
+            234.8,
+            0.2,
+            260.5,
+            7.8
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.257,
+          "box_xyxy": [
+            257.5,
+            0.5,
+            271.6,
+            12.3
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.304,
+          "box_xyxy": [
+            238.3,
+            0.3,
+            247.6,
+            11.3
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.264,
+          "box_xyxy": [
+            234.8,
+            0.2,
+            242.1,
+            10.1
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.285,
+          "box_xyxy": [
+            243.2,
+            0.2,
+            258.8,
+            13.1
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.281,
+          "box_xyxy": [
+            219.1,
+            -0.1,
+            236.5,
+            9.8
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.28,
+          "box_xyxy": [
+            218.5,
+            -0.2,
+            233.7,
+            10.0
+          ]
+        }
+      ]
+    },
+    {
+      "image": "hard_hat_workers210.png",
+      "ground_truth_count": 11,
+      "prediction_count": 25,
+      "error_count": 14,
+      "errors": [],
+      "false_positives": [
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.756,
+          "box_xyxy": [
+            109.5,
+            135.1,
+            130.3,
+            169.7
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "person",
+          "confidence": 0.382,
+          "box_xyxy": [
+            239.0,
+            126.8,
+            418.6,
+            346.7
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "person",
+          "confidence": 0.406,
+          "box_xyxy": [
+            166.1,
+            130.1,
+            230.6,
+            338.5
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "person",
+          "confidence": 0.273,
+          "box_xyxy": [
+            55.6,
+            348.1,
+            165.5,
+            414.8
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "person",
+          "confidence": 0.408,
+          "box_xyxy": [
+            53.7,
+            124.2,
+            186.4,
+            343.9
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.254,
+          "box_xyxy": [
+            135.3,
+            0.2,
+            184.3,
+            14.0
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "person",
+          "confidence": 0.413,
+          "box_xyxy": [
+            -0.7,
+            132.8,
+            50.1,
+            345.2
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.312,
+          "box_xyxy": [
+            255.1,
+            -0.0,
+            288.5,
+            6.1
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "person",
+          "confidence": 0.307,
+          "box_xyxy": [
+            51.9,
+            125.9,
+            221.0,
+            344.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "person",
+          "confidence": 0.293,
+          "box_xyxy": [
+            282.1,
+            349.2,
+            420.0,
+            414.5
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.251,
+          "box_xyxy": [
+            248.2,
+            0.1,
+            288.3,
+            4.5
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.265,
+          "box_xyxy": [
+            183.9,
+            0.1,
+            229.2,
+            9.0
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.256,
+          "box_xyxy": [
+            0.2,
+            -0.2,
+            30.8,
+            6.1
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "person",
+          "confidence": 0.426,
+          "box_xyxy": [
+            55.1,
+            112.1,
+            185.7,
+            343.9
+          ]
+        }
+      ]
+    },
+    {
+      "image": "hard_hat_workers2095.png",
+      "ground_truth_count": 13,
+      "prediction_count": 20,
+      "error_count": 13,
+      "errors": [
+        {
+          "kind": "missed_detection",
+          "true_class": "helmet",
+          "predicted_class": null,
+          "box_xyxy": [
+            333.0,
+            0.0,
+            353.0,
+            11.0
+          ],
+          "best_iou": 0.0,
+          "scale_fraction": 0.00127,
+          "max_overlap_with_other_gt": 0.0,
+          "blur_laplacian_var": 264.79,
+          "mean_luminance": 186.75,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        },
+        {
+          "kind": "missed_detection",
+          "true_class": "helmet",
+          "predicted_class": null,
+          "box_xyxy": [
+            397.0,
+            0.0,
+            415.0,
+            5.0
+          ],
+          "best_iou": 0.0,
+          "scale_fraction": 0.00052,
+          "max_overlap_with_other_gt": 0.0,
+          "blur_laplacian_var": 213.21,
+          "mean_luminance": 85.6,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        },
+        {
+          "kind": "missed_detection",
+          "true_class": "helmet",
+          "predicted_class": null,
+          "box_xyxy": [
+            362.0,
+            -0.0,
+            375.0,
+            9.0
+          ],
+          "best_iou": 0.0,
+          "scale_fraction": 0.00068,
+          "max_overlap_with_other_gt": 0.0,
+          "blur_laplacian_var": 1047.9,
+          "mean_luminance": 153.76,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        }
+      ],
+      "false_positives": [
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.636,
+          "box_xyxy": [
+            224.2,
+            163.7,
+            238.0,
+            177.9
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.571,
+          "box_xyxy": [
+            329.7,
+            170.1,
+            367.7,
+            216.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.754,
+          "box_xyxy": [
+            177.2,
+            157.9,
+            190.8,
+            174.2
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.347,
+          "box_xyxy": [
+            408.7,
+            139.0,
+            416.1,
+            158.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.594,
+          "box_xyxy": [
+            270.3,
+            157.7,
+            282.2,
+            171.1
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.558,
+          "box_xyxy": [
+            240.2,
+            160.5,
+            250.3,
+            173.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.278,
+          "box_xyxy": [
+            149.4,
+            180.0,
+            161.8,
+            191.6
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.432,
+          "box_xyxy": [
+            270.0,
+            156.3,
+            282.4,
+            171.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.316,
+          "box_xyxy": [
+            268.3,
+            0.2,
+            282.3,
+            8.2
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.418,
+          "box_xyxy": [
+            240.1,
+            160.3,
+            250.3,
+            173.5
+          ]
+        }
+      ]
+    },
+    {
+      "image": "hard_hat_workers2737.png",
+      "ground_truth_count": 18,
+      "prediction_count": 28,
+      "error_count": 13,
+      "errors": [
+        {
+          "kind": "class_confusion",
+          "true_class": "helmet",
+          "predicted_class": "head",
+          "box_xyxy": [
+            200.0,
+            216.0,
+            211.0,
+            229.0
+          ],
+          "best_iou": 0.749,
+          "scale_fraction": 0.00083,
+          "max_overlap_with_other_gt": 0.0,
+          "blur_laplacian_var": 2602.05,
+          "mean_luminance": 89.69,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area",
+            "class confusion: predicted head for a helmet"
+          ]
+        },
+        {
+          "kind": "missed_detection",
+          "true_class": "helmet",
+          "predicted_class": null,
+          "box_xyxy": [
+            323.0,
+            211.0,
+            335.0,
+            226.0
+          ],
+          "best_iou": 0.0,
+          "scale_fraction": 0.00104,
+          "max_overlap_with_other_gt": 0.088,
+          "blur_laplacian_var": 4362.11,
+          "mean_luminance": 116.95,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        }
+      ],
+      "false_positives": [
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.76,
+          "box_xyxy": [
+            4.5,
+            215.2,
+            24.7,
+            237.5
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.466,
+          "box_xyxy": [
+            160.5,
+            241.0,
+            174.5,
+            256.2
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.67,
+          "box_xyxy": [
+            174.2,
+            219.3,
+            183.3,
+            229.7
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.537,
+          "box_xyxy": [
+            211.7,
+            219.4,
+            222.8,
+            231.6
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.683,
+          "box_xyxy": [
+            235.7,
+            219.9,
+            245.6,
+            232.2
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.347,
+          "box_xyxy": [
+            279.2,
+            233.8,
+            288.0,
+            245.7
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.279,
+          "box_xyxy": [
+            344.9,
+            217.5,
+            355.0,
+            230.6
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.366,
+          "box_xyxy": [
+            286.0,
+            215.5,
+            295.4,
+            227.5
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.363,
+          "box_xyxy": [
+            288.0,
+            215.6,
+            300.3,
+            228.6
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.391,
+          "box_xyxy": [
+            288.2,
+            215.8,
+            299.9,
+            228.9
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.255,
+          "box_xyxy": [
+            177.2,
+            226.5,
+            191.6,
+            241.9
+          ]
+        }
+      ]
+    },
+    {
+      "image": "hard_hat_workers506.png",
+      "ground_truth_count": 3,
+      "prediction_count": 14,
+      "error_count": 13,
+      "errors": [
+        {
+          "kind": "missed_detection",
+          "true_class": "helmet",
+          "predicted_class": null,
+          "box_xyxy": [
+            192.0,
+            390.0,
+            252.0,
+            414.0
+          ],
+          "best_iou": 0.343,
+          "scale_fraction": 0.00834,
+          "max_overlap_with_other_gt": 0.0,
+          "blur_laplacian_var": 4612.37,
+          "mean_luminance": 97.03,
+          "hypotheses": [
+            "no single measured cause stands out, inspect manually"
+          ]
+        }
+      ],
+      "false_positives": [
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.839,
+          "box_xyxy": [
+            317.6,
+            134.6,
+            379.6,
+            206.2
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.787,
+          "box_xyxy": [
+            17.4,
+            66.0,
+            70.3,
+            137.3
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.794,
+          "box_xyxy": [
+            0.2,
+            70.3,
+            21.1,
+            153.8
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.659,
+          "box_xyxy": [
+            236.9,
+            213.9,
+            279.7,
+            249.1
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.63,
+          "box_xyxy": [
+            9.5,
+            -0.1,
+            73.8,
+            39.1
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.427,
+          "box_xyxy": [
+            196.3,
+            403.4,
+            225.0,
+            414.8
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.48,
+          "box_xyxy": [
+            218.3,
+            398.9,
+            252.6,
+            414.8
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.287,
+          "box_xyxy": [
+            174.4,
+            40.3,
+            205.8,
+            65.0
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.33,
+          "box_xyxy": [
+            255.8,
+            56.0,
+            271.2,
+            75.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.389,
+          "box_xyxy": [
+            395.6,
+            139.0,
+            416.1,
+            206.5
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.284,
+          "box_xyxy": [
+            401.8,
+            196.3,
+            416.3,
+            217.5
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "head",
+          "confidence": 0.361,
+          "box_xyxy": [
+            399.4,
+            -0.1,
+            416.1,
+            31.2
+          ]
+        }
+      ]
+    },
+    {
+      "image": "hard_hat_workers3801.png",
+      "ground_truth_count": 12,
+      "prediction_count": 21,
+      "error_count": 11,
+      "errors": [
+        {
+          "kind": "missed_detection",
+          "true_class": "helmet",
+          "predicted_class": null,
+          "box_xyxy": [
+            7.0,
+            403.0,
+            24.0,
+            414.0
+          ],
+          "best_iou": 0.231,
+          "scale_fraction": 0.00108,
+          "max_overlap_with_other_gt": 0.0,
+          "blur_laplacian_var": 1919.06,
+          "mean_luminance": 76.65,
+          "hypotheses": [
+            "small object: under 0.5 percent of image area"
+          ]
+        }
+      ],
+      "false_positives": [
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.813,
+          "box_xyxy": [
+            237.1,
+            278.3,
+            255.3,
+            298.0
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.715,
+          "box_xyxy": [
+            193.1,
+            401.6,
+            209.4,
+            414.9
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.385,
+          "box_xyxy": [
+            3.0,
+            391.1,
+            36.7,
+            415.1
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "person",
+          "confidence": 0.309,
+          "box_xyxy": [
+            194.0,
+            270.6,
+            232.2,
+            343.8
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.361,
+          "box_xyxy": [
+            227.4,
+            293.1,
+            240.2,
+            305.6
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.318,
+          "box_xyxy": [
+            194.2,
+            276.6,
+            205.2,
+            289.8
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.323,
+          "box_xyxy": [
+            227.6,
+            293.6,
+            239.9,
+            306.2
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.284,
+          "box_xyxy": [
+            193.3,
+            277.0,
+            205.9,
+            295.6
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.307,
+          "box_xyxy": [
+            227.1,
+            293.3,
+            240.6,
+            306.4
+          ]
+        },
+        {
+          "kind": "false_positive",
+          "predicted_class": "helmet",
+          "confidence": 0.322,
+          "box_xyxy": [
+            226.8,
+            293.3,
+            240.9,
+            306.7
+          ]
+        }
+      ]
+    }
+  ]
+}

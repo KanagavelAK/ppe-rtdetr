@@ -19,3 +19,5 @@ anthropic>=1.0
 # Dev
 pytest==8.3.4
 httpx==0.27.2
+markdown>=3.5      # memo/build_pdf.py
+pypdf>=4.0         # memo/build_pdf.py page count
