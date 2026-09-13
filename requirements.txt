@@ -8,7 +8,7 @@ pillow>=10.0
 kagglehub>=0.3      # fetches the checkpoint from its public Kaggle dataset
 
 # API
-fastapi==0.115.6
+fastapi>=0.115
 uvicorn[standard]==0.34.0
 python-multipart==0.0.20
 pydantic>=2.9
