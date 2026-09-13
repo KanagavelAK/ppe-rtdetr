@@ -126,12 +126,20 @@ with gr.Blocks(title="Site Safety Compliance") as demo:
 ON_SPACES = bool(os.getenv("SPACE_ID"))
 
 if ON_SPACES:
+    from gradio.routes import App
+
     detector.load()   # the mounted sub-app's startup hook does not run under Gradio's server
-    gradio_app, _, _ = demo.launch(server_name="0.0.0.0", server_port=7860,
-                                   prevent_thread_lock=True, ssr_mode=False)
-    # Gradio ends its route table with a catch-all, so the API mount must go first.
-    gradio_app.router.routes.insert(0, Mount("/api", app=api))
-    demo.block_thread()
+
+    _create_app = App.create_app
+
+    def _create_app_with_api(blocks, *args, **kwargs):
+        gradio_app = _create_app(blocks, *args, **kwargs)
+        # Gradio ends its route table with a catch-all, so the API mount must go first.
+        gradio_app.router.routes.insert(0, Mount("/api", app=api))
+        return gradio_app
+
+    App.create_app = staticmethod(_create_app_with_api)
+    demo.launch(server_name="0.0.0.0", server_port=7860, ssr_mode=False)   # blocks, as the runner expects
 else:
     app = gr.mount_gradio_app(api, demo, path="/", ssr_mode=False)
     if __name__ == "__main__":
