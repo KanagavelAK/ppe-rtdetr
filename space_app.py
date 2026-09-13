@@ -8,15 +8,19 @@ One process serves both the demo page and the FastAPI app from app/main.py.
         root as usual, /detect, /ask, /docs, and the page is at /.
 
 The two layouts exist because the Spaces runner only marks a Gradio Space
-live once `demo.launch()` has run; a plain uvicorn process is shut down.
+live once `demo.launch()` has run, and ZeroGPU additionally requires at least
+one `@spaces.GPU` function; a plain uvicorn process is shut down.
 """
 import io
 import os
 
 try:
-    import spaces  # noqa: F401  ZeroGPU runtime; must be imported before torch on Spaces
-except ImportError:
-    pass
+    import spaces  # ZeroGPU runtime; must be imported before torch on Spaces
+except ImportError:  # local run: make @spaces.GPU a no-op
+    class spaces:  # noqa: N801
+        @staticmethod
+        def GPU(fn=None, **_):
+            return fn if fn is not None else (lambda f: f)
 
 import gradio as gr
 import uvicorn
@@ -49,6 +53,9 @@ def _draw(image: Image.Image, detections) -> Image.Image:
     return out
 
 
+# ZeroGPU: the runner refuses to start a Space with no @spaces.GPU function. These
+# two are the only GPU-worthy calls; the API routes stay on CPU (~0.6 s/image).
+@spaces.GPU(duration=30)
 def run_detect(image, confidence):
     if image is None:
         return None, {"error": "upload an image first"}
@@ -65,6 +72,7 @@ def run_detect(image, confidence):
     }
 
 
+@spaces.GPU(duration=30)
 def run_ask(image, question, confidence):
     """Same four steps as POST /ask, in the same order."""
     decision = reasoning.route(question or "")
